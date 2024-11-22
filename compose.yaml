@@ -1,0 +1,16 @@
+services:
+  http2sql:
+    build:
+      context: .
+      dockerfile: dockerfile
+    image: ghcr.io/excoffierleonard/http2sql
+    container_name: http2sql
+    ports:
+      - "8080:8080"
+    networks:
+      - http2sql
+    restart: unless-stopped
+
+networks:
+  http2sql:
+    name: http2sql
