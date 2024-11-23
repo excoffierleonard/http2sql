@@ -24,6 +24,12 @@ FROM alpine
 
 WORKDIR /http2sql
 
+ENV HTTP2SQL_DB_HOST=http2sql-db
+ENV HTTP2SQL_DB_PORT=3306
+ENV HTTP2SQL_DB_NAME=http2sql
+ENV HTTP2SQL_DB_USER=http2sql
+ENV HTTP2SQL_DB_PASSWORD=http2sql
+
 COPY --from=builder /http2sql/target/x86_64-unknown-linux-musl/release/http2sql .
 
 CMD ["./http2sql"]

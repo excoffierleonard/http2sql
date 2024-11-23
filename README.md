@@ -20,7 +20,7 @@ REST API service in Rust that transforms HTTP requests into SQL queries.
 
 The service can be configured using the following environment variables:
 
-- `HTTP2SQL_DB_URL`: The URL of the database to connect to.
+- `HTTP2SQL_DB_HOST`: The host of the database to connect to.
 - `HTTP2SQL_DB_PORT`: The port of the database to connect to.
 - `HTTP2SQL_DB_NAME`: The name of the database to connect to.
 - `HTTP2SQL_DB_USER`: The user to use to connect to the database.
