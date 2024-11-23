@@ -17,9 +17,9 @@ async fn main() -> std::io::Result<()> {
         std::io::Error::new(std::io::ErrorKind::Other, e)
     })?;
 
-    let pool = db::DbPool::new(config.database_url);
+    info!("Starting with config: {:?}", config);
 
-    info!("Starting server with {} workers", config.server_workers);
+    let pool = db::DbPool::new(config.database_url);
 
     HttpServer::new(move || {
         App::new()

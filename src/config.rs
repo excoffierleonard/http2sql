@@ -1,5 +1,6 @@
 use std::env;
 
+#[derive(Debug)]
 pub struct Config {
     pub database_url: String,
     pub server_port: u16,
