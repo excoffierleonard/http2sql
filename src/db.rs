@@ -4,10 +4,16 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::time::{Duration, Instant};
 
+// New type to represent a database pool with its timestamp
+struct PoolEntry {
+    pool: Arc<MySqlPool>,
+    last_used: Instant,
+}
+
 #[derive(Clone)]
 pub struct LazyPool {
     url: String,
-    pool: Arc<Mutex<Option<(MySqlPool, Instant)>>>,
+    pool: Arc<Mutex<Option<PoolEntry>>>,
 }
 
 impl LazyPool {
@@ -19,29 +25,37 @@ impl LazyPool {
         }
     }
 
-    pub async fn get_pool(&self) -> Result<MySqlPool, sqlx::Error> {
+    pub async fn get_pool(&self) -> Result<Arc<MySqlPool>, sqlx::Error> {
         const TIMEOUT_DURATION: Duration = Duration::from_secs(300); // 5 minutes
 
+        // First, try reading without locking
+        if let Some(entry) = self.pool.lock().await.as_ref() {
+            if entry.last_used.elapsed() < TIMEOUT_DURATION {
+                debug!("Reusing existing database connection");
+                return Ok(entry.pool.clone());
+            }
+        }
+
+        // If we need a new connection, then we take the lock
         let mut guard = self.pool.lock().await;
-        let pool_entry = guard.take();
 
-        let new_pool = match pool_entry {
-            Some((pool, last_used)) => {
-                if last_used.elapsed() < TIMEOUT_DURATION {
-                    debug!("Reusing existing database connection");
-                    pool
-                } else {
-                    info!("Connection expired, creating new database connection");
-                    MySqlPool::connect(&self.url).await?
-                }
+        // Double-check pattern in case another thread created the pool
+        if let Some(entry) = guard.as_ref() {
+            if entry.last_used.elapsed() < TIMEOUT_DURATION {
+                debug!("Reusing existing database connection (after double-check)");
+                return Ok(entry.pool.clone());
             }
-            None => {
-                info!("Creating first database connection");
-                MySqlPool::connect(&self.url).await?
-            }
-        };
+        }
 
-        *guard = Some((new_pool.clone(), Instant::now()));
+        // Create new pool
+        info!("Creating new database connection");
+        let new_pool = Arc::new(MySqlPool::connect(&self.url).await?);
+
+        *guard = Some(PoolEntry {
+            pool: new_pool.clone(),
+            last_used: Instant::now(),
+        });
+
         Ok(new_pool)
     }
 }
