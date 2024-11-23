@@ -1,7 +1,6 @@
-use crate::db;
-use actix_web::{get, web, Responder};
+use crate::db::{self, LazyPool};
+use actix_web::{get, web, Responder, Result};
 use serde::Serialize;
-use sqlx::MySqlPool;
 
 #[derive(Serialize)]
 pub struct Response {
@@ -10,13 +9,20 @@ pub struct Response {
 }
 
 #[get("/v1/test")]
-pub async fn test(pool: web::Data<MySqlPool>) -> impl Responder {
-    let timestamp = db::get_current_timestamp(pool.get_ref()).await.unwrap();
+pub async fn test(lazy_pool: web::Data<LazyPool>) -> Result<impl Responder> {
+    let pool = lazy_pool
+        .get_pool()
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?;
+
+    let timestamp = db::get_current_timestamp(&pool)
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let response = Response {
         message: "Test Worked".to_string(),
         db_timestamp: timestamp.to_string(),
     };
 
-    web::Json(response)
+    Ok(web::Json(response))
 }
