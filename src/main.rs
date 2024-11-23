@@ -19,7 +19,7 @@ async fn main() -> std::io::Result<()> {
 
     let pool = db::DbPool::new(config.database_url);
 
-    info!("Starting server with {} workers", config.workers);
+    info!("Starting server with {} workers", config.server_workers);
 
     HttpServer::new(move || {
         App::new()
@@ -29,7 +29,7 @@ async fn main() -> std::io::Result<()> {
             .service(handlers::test)
     })
     .bind(format!("0.0.0.0:{}", config.server_port))?
-    .workers(config.workers)
+    .workers(config.server_workers)
     .run()
     .await
 }
