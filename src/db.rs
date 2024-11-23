@@ -22,7 +22,7 @@ impl DbPool {
         match &*guard {
             Some(pool) => Ok(pool.clone()),
             None => {
-                info!("Creating new database connection");
+                info!("Creating new database connection with URL: {}", self.url);
                 let pool = MySqlPool::connect(&self.url).await?;
                 *guard = Some(pool.clone());
                 Ok(pool)

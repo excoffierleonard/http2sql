@@ -7,7 +7,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_env() -> Result<Self, env::VarError> {
+    pub fn build() -> Result<Self, env::VarError> {
         dotenv::dotenv().ok();
 
         let user = env::var("HTTP2SQL_DB_USER").unwrap_or_else(|_| "http2sql-db".to_string());
