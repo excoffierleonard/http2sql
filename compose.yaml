@@ -12,7 +12,7 @@ services:
       HTTP2SQL_DB_USER: ${HTTP2SQL_DB_USER:-http2sql}
       HTTP2SQL_DB_PASSWORD: ${HTTP2SQL_DB_PASSWORD:-http2sql}
     ports:
-      - "80:80"
+      - "8080:8080"
     networks:
       - http2sql
     restart: unless-stopped
