@@ -1,69 +1,48 @@
-use log::{debug, info};
+use log::info;
 use sqlx::MySqlPool;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tokio::time::{Duration, Instant};
 
-// New type to represent a database pool with its timestamp
-struct PoolEntry {
-    pool: Arc<MySqlPool>,
-    last_used: Instant,
-}
-
-#[derive(Clone)]
-pub struct LazyPool {
+pub struct DbPool {
+    pool: Arc<Mutex<Option<MySqlPool>>>,
     url: String,
-    pool: Arc<Mutex<Option<PoolEntry>>>,
 }
 
-impl LazyPool {
+impl DbPool {
     pub fn new(url: String) -> Self {
-        info!("Initializing lazy database pool");
         Self {
-            url,
             pool: Arc::new(Mutex::new(None)),
+            url,
         }
     }
 
-    pub async fn get_pool(&self) -> Result<Arc<MySqlPool>, sqlx::Error> {
-        const TIMEOUT_DURATION: Duration = Duration::from_secs(300); // 5 minutes
-
-        // First, try reading without locking
-        if let Some(entry) = self.pool.lock().await.as_ref() {
-            if entry.last_used.elapsed() < TIMEOUT_DURATION {
-                debug!("Reusing existing database connection");
-                return Ok(entry.pool.clone());
-            }
-        }
-
-        // If we need a new connection, then we take the lock
+    pub async fn get_pool(&self) -> Result<MySqlPool, sqlx::Error> {
         let mut guard = self.pool.lock().await;
 
-        // Double-check pattern in case another thread created the pool
-        if let Some(entry) = guard.as_ref() {
-            if entry.last_used.elapsed() < TIMEOUT_DURATION {
-                debug!("Reusing existing database connection (after double-check)");
-                return Ok(entry.pool.clone());
+        match &*guard {
+            Some(pool) => Ok(pool.clone()),
+            None => {
+                info!("Creating new database connection");
+                let pool = MySqlPool::connect(&self.url).await?;
+                *guard = Some(pool.clone());
+                Ok(pool)
             }
         }
+    }
+}
 
-        // Create new pool
-        info!("Creating new database connection");
-        let new_pool = Arc::new(MySqlPool::connect(&self.url).await?);
-
-        *guard = Some(PoolEntry {
-            pool: new_pool.clone(),
-            last_used: Instant::now(),
-        });
-
-        Ok(new_pool)
+impl Clone for DbPool {
+    fn clone(&self) -> Self {
+        Self {
+            pool: self.pool.clone(),
+            url: self.url.clone(),
+        }
     }
 }
 
 pub async fn get_current_timestamp(
     pool: &MySqlPool,
 ) -> Result<chrono::DateTime<chrono::Utc>, sqlx::Error> {
-    debug!("Fetching current timestamp from database");
     let (timestamp,): (chrono::DateTime<chrono::Utc>,) =
         sqlx::query_as("SELECT NOW()").fetch_one(pool).await?;
     Ok(timestamp)

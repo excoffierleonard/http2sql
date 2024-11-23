@@ -6,34 +6,30 @@ use actix_web::{
     middleware::{Compress, Logger},
     web, App, HttpServer,
 };
-use log::{info, warn};
+use log::{error, info};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    info!("Starting HTTP2SQL service");
+    let config = config::Config::from_env().map_err(|e| {
+        error!("Configuration error: {}", e);
+        std::io::Error::new(std::io::ErrorKind::Other, e)
+    })?;
 
-    let config = config::Config::from_env();
-    info!("Configuration loaded");
+    let pool = db::DbPool::new(config.database_url);
 
-    let lazy_pool = db::LazyPool::new(config.database_url);
-    let workers = config.workers;
-    info!("Starting server with {} workers", workers);
+    info!("Starting server with {} workers", config.workers);
 
     HttpServer::new(move || {
         App::new()
-            .wrap(Compress::default())
             .wrap(Logger::default())
-            .app_data(web::Data::new(lazy_pool.clone()))
+            .wrap(Compress::default())
+            .app_data(web::Data::new(pool.clone()))
             .service(handlers::test)
     })
-    .bind(format!("0.0.0.0:{}", config.server_port))
-    .map_err(|e| {
-        warn!("Failed to bind to port {}: {}", config.server_port, e);
-        e
-    })?
-    .workers(workers)
+    .bind(format!("0.0.0.0:{}", config.server_port))?
+    .workers(config.workers)
     .run()
     .await
 }

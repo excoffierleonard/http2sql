@@ -1,7 +1,8 @@
-use crate::db::{self, LazyPool};
 use actix_web::{get, web, Responder, Result};
-use log::{debug, warn};
+use log::warn;
 use serde::Serialize;
+
+use crate::db::{self, DbPool};
 
 #[derive(Serialize)]
 pub struct Response {
@@ -10,8 +11,8 @@ pub struct Response {
 }
 
 #[get("/v1/test")]
-pub async fn test(lazy_pool: web::Data<LazyPool>) -> Result<impl Responder> {
-    let pool = lazy_pool.get_pool().await.map_err(|e| {
+pub async fn test(pool: web::Data<DbPool>) -> Result<impl Responder> {
+    let pool = pool.get_pool().await.map_err(|e| {
         warn!("Database connection error: {}", e);
         actix_web::error::ErrorInternalServerError(e)
     })?;
@@ -21,12 +22,8 @@ pub async fn test(lazy_pool: web::Data<LazyPool>) -> Result<impl Responder> {
         actix_web::error::ErrorInternalServerError(e)
     })?;
 
-    debug!("Successfully fetched timestamp: {}", timestamp);
-
-    let response = Response {
+    Ok(web::Json(Response {
         message: "Test Worked".to_string(),
         db_timestamp: timestamp.to_string(),
-    };
-
-    Ok(web::Json(response))
+    }))
 }

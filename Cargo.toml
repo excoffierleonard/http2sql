@@ -4,12 +4,23 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+# Web framework
 actix-web = "4"
+
+# Database
+sqlx = { version = "0", features = ["runtime-tokio", "mysql", "chrono", "macros"] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Utilities
 chrono = { version = "0", features = ["serde"] }
 dotenv = "0"
 num_cpus = "1"
+
+# Serialization
 serde = { version = "1", features = ["derive"] }
-sqlx = { version = "0", features = ["runtime-tokio", "mysql", "chrono", "macros"] }
-tokio = { version = "1", features = ["full"] }
+
+# Logging
 log = "0"
 env_logger = "0"
