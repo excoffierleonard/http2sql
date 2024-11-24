@@ -884,6 +884,7 @@ dependencies = [
  "log",
  "num_cpus",
  "serde",
+ "serde_json",
  "sqlx",
  "tokio",
 ]
