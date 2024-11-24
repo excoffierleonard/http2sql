@@ -1,10 +1,11 @@
 use crate::db::DbPool;
 use actix_web::{
+    delete,
     error::ResponseError,
     get,
     http::StatusCode,
     post,
-    web::{self},
+    web::{self, Path},
     HttpResponse, Responder, Result,
 };
 use log::warn;
@@ -149,6 +150,34 @@ pub async fn create_table(
     })?;
 
     Ok(HttpResponse::Created().json(ExecuteResponse {
+        rows_affected: result.rows_affected(),
+        last_insert_id: result.last_insert_id(),
+    }))
+}
+
+#[delete("/v1/tables/{table_name}")]
+pub async fn delete_table(
+    pool: web::Data<DbPool>,
+    table_name: Path<String>,
+) -> Result<impl Responder, ApiError> {
+    let pool = pool.get_pool().await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    let table_name = table_name.into_inner();
+    if table_name.is_empty() {
+        return Err(ApiError::InvalidInput("Table name is required".to_string()));
+    }
+
+    let query = format!("DROP TABLE IF EXISTS {}", table_name);
+
+    let result = sqlx::query(&query).execute(&pool).await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    Ok(HttpResponse::Ok().json(ExecuteResponse {
         rows_affected: result.rows_affected(),
         last_insert_id: result.last_insert_id(),
     }))
