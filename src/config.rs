@@ -12,10 +12,10 @@ impl Config {
         dotenv::dotenv().ok();
 
         let user = env::var("HTTP2SQL_DB_USER").unwrap_or_else(|_| "http2sql-db".to_string());
-        let pass = env::var("HTTP2SQL_DB_PASS").unwrap_or_else(|_| "http2sql".to_string());
-        let host = env::var("HTTP2SQL_DB_HOST").unwrap_or_else(|_| "localhost".to_string());
+        let pass = env::var("HTTP2SQL_DB_PASS").unwrap_or_else(|_| "http2sql-db".to_string());
+        let host = env::var("HTTP2SQL_DB_HOST").unwrap_or_else(|_| "http2sql-db".to_string());
         let port = env::var("HTTP2SQL_DB_PORT").unwrap_or_else(|_| "3306".to_string());
-        let name = env::var("HTTP2SQL_DB_NAME").unwrap_or_else(|_| "http2sql".to_string());
+        let name = env::var("HTTP2SQL_DB_NAME").unwrap_or_else(|_| "http2sql-db".to_string());
 
         let server_port = env::var("HTTP2SQL_SERVER_PORT")
             .unwrap_or_else(|_| "8080".to_string())

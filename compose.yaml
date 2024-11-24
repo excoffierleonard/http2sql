@@ -8,9 +8,9 @@ services:
     environment:
       HTTP2SQL_DB_HOST: ${HTTP2SQL_DB_HOST:-http2sql-db}
       HTTP2SQL_DB_PORT: ${HTTP2SQL_DB_PORT:-3306}
-      HTTP2SQL_DB_NAME: ${HTTP2SQL_DB_NAME:-http2sql}
-      HTTP2SQL_DB_USER: ${HTTP2SQL_DB_USER:-http2sql}
-      HTTP2SQL_DB_PASSWORD: ${HTTP2SQL_DB_PASSWORD:-http2sql}
+      HTTP2SQL_DB_NAME: ${HTTP2SQL_DB_NAME:-http2sql-db}
+      HTTP2SQL_DB_USER: ${HTTP2SQL_DB_USER:-http2sql-db}
+      HTTP2SQL_DB_PASSWORD: ${HTTP2SQL_DB_PASSWORD:-http2sql-db}
     ports:
       - "8080:8080"
     networks:
@@ -23,9 +23,11 @@ services:
     container_name: http2sql-db
     environment:
       MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 1
-      MARIADB_DATABASE: ${HTTP2SQL_DB_NAME:-http2sql}
-      MARIADB_USER: ${HTTP2SQL_DB_USER:-http2sql}
-      MARIADB_PASSWORD: ${HTTP2SQL_DB_PASSWORD:-http2sql}
+      MARIADB_DATABASE: ${HTTP2SQL_DB_NAME:-http2sql-db}
+      MARIADB_USER: ${HTTP2SQL_DB_USER:-http2sql-db}
+      MARIADB_PASSWORD: ${HTTP2SQL_DB_PASSWORD:-http2sql-db}
+    ports:
+      - "${HTTP2SQL_DB_PORT:-3306}:3306"
     volumes:
       - http2sql-db:/var/lib/mysql
     networks:
