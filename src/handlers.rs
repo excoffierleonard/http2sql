@@ -1,5 +1,5 @@
 use crate::db::DbPool;
-use actix_web::{error::ResponseError, get, http::StatusCode, web, Responder, Result};
+use actix_web::{error::ResponseError, get, http::StatusCode, post, web, Responder, Result};
 use log::warn;
 use serde::Serialize;
 use sqlx::Row;
@@ -45,7 +45,7 @@ struct ErrorResponse {
 }
 
 #[get("/v1/test")]
-pub async fn test(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
+pub async fn test_fetch(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
     let rows = pool
         .query_fetch("SELECT JSON_OBJECT('time', NOW()) as json")
         .await
@@ -62,7 +62,7 @@ pub async fn test(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
     Ok(web::Json(FetchResponse(json_rows)))
 }
 
-#[get("/v1/test_execute")]
+#[post("/v1/test")]
 pub async fn test_execute(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
     let result = pool
         .query_execute("CREATE TABLE IF NOT EXISTS test (id INT)")
