@@ -31,9 +31,8 @@ impl ResponseError for ApiError {
 }
 
 #[derive(Serialize)]
-struct TestItem {
-    id: i32,
-    name: String,
+struct ErrorResponse {
+    message: String,
 }
 
 #[derive(Serialize)]
@@ -46,8 +45,9 @@ struct ExecuteResponse {
 }
 
 #[derive(Serialize)]
-struct ErrorResponse {
-    message: String,
+struct TestItem {
+    id: i32,
+    name: String,
 }
 
 #[get("/v1/test")]
