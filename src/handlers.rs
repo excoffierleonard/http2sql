@@ -53,7 +53,12 @@ struct TestItem {
 #[get("/v1/test")]
 pub async fn test_fetch(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
     let result = pool
-        .query_fetch("SELECT id, name FROM test")
+        .query_fetch(
+            "
+            SELECT id, name, email
+            FROM test;
+        ",
+        )
         .await
         .map_err(|e| {
             warn!("Database error: {}", e);
@@ -76,7 +81,14 @@ pub async fn test_fetch(pool: web::Data<DbPool>) -> Result<impl Responder, ApiEr
 pub async fn test_execute(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
     let result = pool
         .query_execute(
-            "CREATE TABLE IF NOT EXISTS test (id INT AUTO_INCREMENT, name TEXT, PRIMARY KEY (id))",
+            "
+            CREATE TABLE IF NOT EXISTS test (
+                id INT AUTO_INCREMENT, 
+                name VARCHAR(255), 
+                email VARCHAR(255), 
+                PRIMARY KEY (id)
+            );
+        ",
         )
         .await
         .map_err(|e| {
