@@ -31,7 +31,13 @@ impl ResponseError for ApiError {
 }
 
 #[derive(Serialize)]
-struct FetchResponse(Vec<serde_json::Value>);
+struct TestItem {
+    id: i32,
+    name: String,
+}
+
+#[derive(Serialize)]
+struct FetchResponse(Vec<TestItem>);
 
 #[derive(Serialize)]
 struct ExecuteResponse {
@@ -46,26 +52,30 @@ struct ErrorResponse {
 
 #[get("/v1/test")]
 pub async fn test_fetch(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
-    let rows = pool
-        .query_fetch("SELECT JSON_OBJECT('time', NOW()) as json")
+    let result = pool
+        .query_fetch("SELECT id, name FROM test")
         .await
         .map_err(|e| {
             warn!("Database error: {}", e);
             ApiError::Database(e)
         })?;
 
-    let json_rows = rows
+    let items: Vec<TestItem> = result
         .iter()
-        .filter_map(|row| row.try_get::<serde_json::Value, _>("json").ok())
+        .filter_map(|row| {
+            let id: i32 = row.try_get("id").ok()?;
+            let name: String = row.try_get("name").ok()?;
+            Some(TestItem { id, name })
+        })
         .collect();
 
-    Ok(web::Json(FetchResponse(json_rows)))
+    Ok(web::Json(FetchResponse(items)))
 }
 
 #[post("/v1/test")]
 pub async fn test_execute(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
     let result = pool
-        .query_execute("CREATE TABLE IF NOT EXISTS test (id INT)")
+        .query_execute("CREATE TABLE IF NOT EXISTS test (id INT, name TEXT, PRIMARY KEY (id))")
         .await
         .map_err(|e| {
             warn!("Database error: {}", e);
