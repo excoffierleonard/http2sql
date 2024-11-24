@@ -22,12 +22,28 @@ impl DbPool {
         match &*guard {
             Some(pool) => Ok(pool.clone()),
             None => {
-                info!("Creating new database connection with URL: {}", self.url);
+                info!("Creating new database connection");
                 let pool = MySqlPool::connect(&self.url).await?;
                 *guard = Some(pool.clone());
                 Ok(pool)
             }
         }
+    }
+
+    pub async fn query_fetch(
+        &self,
+        query: &str,
+    ) -> Result<Vec<sqlx::mysql::MySqlRow>, sqlx::Error> {
+        let pool = self.get_pool().await?;
+        sqlx::query(query).fetch_all(&pool).await
+    }
+
+    pub async fn query_execute(
+        &self,
+        query: &str,
+    ) -> Result<sqlx::mysql::MySqlQueryResult, sqlx::Error> {
+        let pool = self.get_pool().await?;
+        sqlx::query(query).execute(&pool).await
     }
 }
 
@@ -38,12 +54,4 @@ impl Clone for DbPool {
             url: self.url.clone(),
         }
     }
-}
-
-pub async fn get_current_timestamp(
-    pool: &MySqlPool,
-) -> Result<chrono::DateTime<chrono::Utc>, sqlx::Error> {
-    let (timestamp,): (chrono::DateTime<chrono::Utc>,) =
-        sqlx::query_as("SELECT NOW()").fetch_one(pool).await?;
-    Ok(timestamp)
 }

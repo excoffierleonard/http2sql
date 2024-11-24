@@ -24,9 +24,9 @@ Database connection:
 
 - `HTTP2SQL_DB_HOST`: The host of the database to connect to. (default: http2sql-db)
 - `HTTP2SQL_DB_PORT`: The port of the database to connect to. (default: 3306)
-- `HTTP2SQL_DB_NAME`: The name of the database to connect to. (default: http2sql)
-- `HTTP2SQL_DB_USER`: The user to use to connect to the database. (default: http2sql)
-- `HTTP2SQL_DB_PASSWORD`: The password to use to connect to the database. (default: http2sql)
+- `HTTP2SQL_DB_NAME`: The name of the database to connect to. (default: http2sql-db)
+- `HTTP2SQL_DB_USER`: The user to use to connect to the database. (default: http2sql-db)
+- `HTTP2SQL_DB_PASSWORD`: The password to use to connect to the database. (default: http2sql-db)
 
 Server configuration:
 
