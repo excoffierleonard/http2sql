@@ -26,6 +26,8 @@ services:
       MARIADB_DATABASE: ${HTTP2SQL_DB_NAME:-http2sql-db}
       MARIADB_USER: ${HTTP2SQL_DB_USER:-http2sql-db}
       MARIADB_PASSWORD: ${HTTP2SQL_DB_PASSWORD:-http2sql-db}
+    ports:
+      - "${HTTP2SQL_DB_PORT:-3306}:3306"
     volumes:
       - http2sql-db:/var/lib/mysql
     networks:

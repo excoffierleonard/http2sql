@@ -75,7 +75,9 @@ pub async fn test_fetch(pool: web::Data<DbPool>) -> Result<impl Responder, ApiEr
 #[post("/v1/test")]
 pub async fn test_execute(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
     let result = pool
-        .query_execute("CREATE TABLE IF NOT EXISTS test (id INT, name TEXT, PRIMARY KEY (id))")
+        .query_execute(
+            "CREATE TABLE IF NOT EXISTS test (id INT AUTO_INCREMENT, name TEXT, PRIMARY KEY (id))",
+        )
         .await
         .map_err(|e| {
             warn!("Database error: {}", e);
