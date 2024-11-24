@@ -1,25 +1,36 @@
 use crate::db::DbPool;
-use actix_web::{error::ResponseError, get, http::StatusCode, post, web, Responder, Result};
+use actix_web::{
+    delete,
+    error::ResponseError,
+    http::StatusCode,
+    post,
+    web::{self, Path},
+    HttpResponse, Responder, Result,
+};
 use log::warn;
-use serde::Serialize;
-use sqlx::Row;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub enum ApiError {
     Database(sqlx::Error),
+    InvalidInput(String),
 }
 
 impl std::fmt::Display for ApiError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Database(e) => write!(f, "Database error: {}", e),
+            Self::InvalidInput(e) => write!(f, "Invalid input: {}", e),
         }
     }
 }
 
 impl ResponseError for ApiError {
     fn status_code(&self) -> StatusCode {
-        StatusCode::INTERNAL_SERVER_ERROR
+        match self {
+            Self::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::InvalidInput(_) => StatusCode::BAD_REQUEST,
+        }
     }
 
     fn error_response(&self) -> actix_web::HttpResponse {
@@ -35,57 +46,90 @@ struct ErrorResponse {
     message: String,
 }
 
-#[derive(Serialize)]
-struct FetchResponse(Vec<TestItem>);
-
-#[derive(Serialize)]
-struct ExecuteResponse {
-    rows_affected: u64,
-    last_insert_id: u64,
-}
-
-#[derive(Serialize)]
-struct TestItem {
-    id: i32,
+#[derive(Deserialize)]
+struct Column {
     name: String,
+    data_type: String,
+    constraints: Option<Vec<String>>,
 }
 
-#[get("/v1/test")]
-pub async fn test_fetch(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
-    let result = pool
-        .query_fetch("SELECT id, name FROM test")
-        .await
-        .map_err(|e| {
-            warn!("Database error: {}", e);
-            ApiError::Database(e)
-        })?;
+#[derive(Deserialize)]
+struct CreateTableRequest {
+    table_name: String,
+    columns: Vec<Column>,
+}
 
-    let items: Vec<TestItem> = result
+#[post("/v1/tables")]
+pub async fn create_table(
+    pool: web::Data<DbPool>,
+    payload: web::Json<CreateTableRequest>,
+) -> Result<impl Responder, ApiError> {
+    let pool = pool.get_pool().await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    if payload.table_name.is_empty() {
+        return Err(ApiError::InvalidInput("Table name is required".to_string()));
+    }
+
+    if payload.columns.is_empty() {
+        return Err(ApiError::InvalidInput(
+            "At least one column is required".to_string(),
+        ));
+    }
+
+    let columns: Vec<String> = payload
+        .columns
         .iter()
-        .filter_map(|row| {
-            let id: i32 = row.try_get("id").ok()?;
-            let name: String = row.try_get("name").ok()?;
-            Some(TestItem { id, name })
+        .map(|col| {
+            let mut column_def = format!("{} {}", col.name, col.data_type);
+
+            if let Some(constraints) = &col.constraints {
+                if !constraints.is_empty() {
+                    column_def = format!("{} {}", column_def, constraints.join(" "));
+                }
+            }
+
+            column_def
         })
         .collect();
 
-    Ok(web::Json(FetchResponse(items)))
+    let query = format!(
+        "CREATE TABLE {} ({})",
+        payload.table_name,
+        columns.join(", ")
+    );
+
+    sqlx::query(&query).execute(&pool).await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    Ok(HttpResponse::Created().finish())
 }
 
-#[post("/v1/test")]
-pub async fn test_execute(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
-    let result = pool
-        .query_execute(
-            "CREATE TABLE IF NOT EXISTS test (id INT AUTO_INCREMENT, name TEXT, PRIMARY KEY (id))",
-        )
-        .await
-        .map_err(|e| {
-            warn!("Database error: {}", e);
-            ApiError::Database(e)
-        })?;
+#[delete("/v1/tables/{table_name}")]
+pub async fn delete_table(
+    pool: web::Data<DbPool>,
+    table_name: Path<String>,
+) -> Result<impl Responder, ApiError> {
+    let pool = pool.get_pool().await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
 
-    Ok(web::Json(ExecuteResponse {
-        rows_affected: result.rows_affected(),
-        last_insert_id: result.last_insert_id(),
-    }))
+    let table_name = table_name.into_inner();
+    if table_name.is_empty() {
+        return Err(ApiError::InvalidInput("Table name is required".to_string()));
+    }
+
+    let query = format!("DROP TABLE IF EXISTS {}", table_name);
+
+    sqlx::query(&query).execute(&pool).await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    Ok(HttpResponse::NoContent().finish())
 }
