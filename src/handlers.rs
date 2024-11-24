@@ -48,29 +48,36 @@ struct ExecuteResponse {
 struct TestItem {
     id: i32,
     name: String,
+    email: String,
 }
 
 #[get("/v1/test")]
 pub async fn test_fetch(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
-    let result = pool
-        .query_fetch(
-            "
-            SELECT id, name, email
-            FROM test;
-        ",
-        )
-        .await
-        .map_err(|e| {
-            warn!("Database error: {}", e);
-            ApiError::Database(e)
-        })?;
+    let pool = pool.get_pool().await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    let result = sqlx::query(
+        "
+        SELECT id, name, email
+        FROM test;
+    ",
+    )
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
 
     let items: Vec<TestItem> = result
         .iter()
         .filter_map(|row| {
             let id: i32 = row.try_get("id").ok()?;
             let name: String = row.try_get("name").ok()?;
-            Some(TestItem { id, name })
+            let email: String = row.try_get("email").ok()?;
+            Some(TestItem { id, name, email })
         })
         .collect();
 
@@ -79,22 +86,27 @@ pub async fn test_fetch(pool: web::Data<DbPool>) -> Result<impl Responder, ApiEr
 
 #[post("/v1/test")]
 pub async fn test_execute(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
-    let result = pool
-        .query_execute(
-            "
-            CREATE TABLE IF NOT EXISTS test (
-                id INT AUTO_INCREMENT, 
-                name VARCHAR(255), 
-                email VARCHAR(255), 
-                PRIMARY KEY (id)
-            );
-        ",
-        )
-        .await
-        .map_err(|e| {
-            warn!("Database error: {}", e);
-            ApiError::Database(e)
-        })?;
+    let pool = pool.get_pool().await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    let result = sqlx::query(
+        "
+        CREATE TABLE IF NOT EXISTS test (
+            id INT AUTO_INCREMENT, 
+            name VARCHAR(255), 
+            email VARCHAR(255), 
+            PRIMARY KEY (id)
+        );
+    ",
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
 
     Ok(web::Json(ExecuteResponse {
         rows_affected: result.rows_affected(),

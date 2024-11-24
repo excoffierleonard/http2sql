@@ -29,22 +29,6 @@ impl DbPool {
             }
         }
     }
-
-    pub async fn query_fetch(
-        &self,
-        query: &str,
-    ) -> Result<Vec<sqlx::mysql::MySqlRow>, sqlx::Error> {
-        let pool = self.get_pool().await?;
-        sqlx::query(query).fetch_all(&pool).await
-    }
-
-    pub async fn query_execute(
-        &self,
-        query: &str,
-    ) -> Result<sqlx::mysql::MySqlQueryResult, sqlx::Error> {
-        let pool = self.get_pool().await?;
-        sqlx::query(query).execute(&pool).await
-    }
 }
 
 impl Clone for DbPool {
