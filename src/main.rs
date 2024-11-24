@@ -27,7 +27,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Compress::default())
             .app_data(web::Data::new(pool.clone()))
             .service(handlers::test_fetch)
-            .service(handlers::test_execute)
+            .service(handlers::create_table)
     })
     .bind(format!("0.0.0.0:{}", config.server_port))?
     .workers(config.server_workers)
