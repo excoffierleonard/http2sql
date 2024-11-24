@@ -31,9 +31,7 @@ impl ResponseError for ApiError {
 }
 
 #[derive(Serialize)]
-struct FetchResponse {
-    rows: Vec<serde_json::Value>,
-}
+struct FetchResponse(Vec<serde_json::Value>);
 
 #[derive(Serialize)]
 struct ExecuteResponse {
@@ -49,7 +47,7 @@ struct ErrorResponse {
 #[get("/v1/test")]
 pub async fn test(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
     let rows = pool
-        .query_fetch("SELECT NOW() as time")
+        .query_fetch("SELECT JSON_OBJECT('time', NOW()) as json")
         .await
         .map_err(|e| {
             warn!("Database error: {}", e);
@@ -58,13 +56,10 @@ pub async fn test(pool: web::Data<DbPool>) -> Result<impl Responder, ApiError> {
 
     let json_rows = rows
         .iter()
-        .map(|row| {
-            let time: String = row.try_get("time").unwrap_or_default();
-            serde_json::json!(time)
-        })
+        .filter_map(|row| row.try_get::<serde_json::Value, _>("json").ok())
         .collect();
 
-    Ok(web::Json(FetchResponse { rows: json_rows }))
+    Ok(web::Json(FetchResponse(json_rows)))
 }
 
 #[get("/v1/test_execute")]
