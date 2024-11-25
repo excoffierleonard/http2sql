@@ -200,7 +200,7 @@ pub async fn delete_table(
         return Err(ApiError::InvalidInput("Table name is required".to_string()));
     }
 
-    let query = format!("DROP TABLE IF EXISTS {}", table_name);
+    let query = format!("DROP TABLE {}", table_name);
 
     sqlx::query(&query).execute(&pool).await.map_err(|e| {
         warn!("Database error: {}", e);
