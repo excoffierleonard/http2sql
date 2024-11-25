@@ -143,31 +143,36 @@ pub async fn insert_rows(
         ));
     }
 
-    // Build the placeholders for MySQL (use ? instead of $1, $2, etc.)
-    let placeholders = vec!["?"; columns.len()];
+    // Create placeholders for a single row
+    let row_placeholders = vec!["?"; columns.len()];
+    let single_row_placeholders = format!("({})", row_placeholders.join(", "));
 
-    // Construct the base query
+    // Create placeholders for all rows
+    let all_rows_placeholders = vec![single_row_placeholders; payload.len()];
+
+    // Construct the bulk insert query
     let query = format!(
-        "INSERT INTO {} ({}) VALUES ({})",
+        "INSERT INTO {} ({}) VALUES {}",
         table_name,
         columns.join(", "),
-        placeholders.join(", ")
+        all_rows_placeholders.join(", ")
     );
 
-    // Execute insert for each row
-    for row in payload.iter() {
-        let mut query_builder = sqlx::query(&query);
+    // Create a single query builder
+    let mut query_builder = sqlx::query(&query);
 
-        // Bind each value in the correct order
+    // Bind all values from all rows in order
+    for row in payload.iter() {
         for column in &columns {
             query_builder = query_builder.bind(row.0.get(column).cloned().unwrap_or(Value::Null));
         }
-
-        query_builder.execute(&pool).await.map_err(|e| {
-            warn!("Database error: {}", e);
-            ApiError::Database(e)
-        })?;
     }
+
+    // Execute single bulk insert
+    query_builder.execute(&pool).await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
 
     Ok(HttpResponse::Created().finish())
 }
