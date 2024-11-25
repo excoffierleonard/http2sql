@@ -2,14 +2,17 @@ use crate::db::DbPool;
 use actix_web::{
     delete,
     error::ResponseError,
+    get,
     http::StatusCode,
     post,
     web::{self, Path},
     HttpResponse, Responder, Result,
 };
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use log::warn;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sqlx::{Column, Row, TypeInfo};
 
 #[derive(Debug)]
 pub enum ApiError {
@@ -62,6 +65,11 @@ struct CreateTableRequest {
 
 #[derive(Deserialize, Serialize)]
 struct TableRow(std::collections::HashMap<String, Value>);
+
+#[derive(Deserialize)]
+pub struct CustomQueryRequest {
+    query: String,
+}
 
 #[post("/v1/tables")]
 pub async fn create_table(
@@ -200,4 +208,168 @@ pub async fn delete_table(
     })?;
 
     Ok(HttpResponse::NoContent().finish())
+}
+
+#[get("/v1/custom")]
+pub async fn custom_query_fetch(
+    pool: web::Data<DbPool>,
+    query: web::Json<CustomQueryRequest>,
+) -> Result<impl Responder, ApiError> {
+    let pool = pool.get_pool().await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    // Validate that the query is a SELECT statement
+    let normalized_query = query.query.trim().to_uppercase();
+    if !normalized_query.starts_with("SELECT") {
+        return Err(ApiError::InvalidInput(
+            "Only SELECT queries are allowed".to_string(),
+        ));
+    }
+
+    let rows = sqlx::query(&query.query)
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| {
+            warn!("Database error: {}", e);
+            ApiError::Database(e)
+        })?;
+
+    let mut result: Vec<TableRow> = Vec::with_capacity(rows.len());
+
+    for row in rows {
+        let mut map = std::collections::HashMap::new();
+        let columns = row.columns();
+
+        for column in columns {
+            let column_name = column.name();
+            let type_info = column.type_info();
+            let type_name = type_info.name();
+
+            // Convert the value based on its SQL type
+            let value = match type_name {
+                // Integer types
+                "TINYINT" | "SMALLINT" | "MEDIUMINT" | "INT" | "BIGINT" => {
+                    if type_info.name().contains("UNSIGNED") {
+                        row.try_get::<u64, _>(column_name)
+                            .ok()
+                            .map(Value::from)
+                            .unwrap_or(Value::Null)
+                    } else {
+                        row.try_get::<i64, _>(column_name)
+                            .ok()
+                            .map(Value::from)
+                            .unwrap_or(Value::Null)
+                    }
+                }
+                // Floating point types
+                "FLOAT" | "DOUBLE" => row
+                    .try_get::<f64, _>(column_name)
+                    .ok()
+                    .map(Value::from)
+                    .unwrap_or(Value::Null),
+                // Decimal types - handle as string to preserve precision
+                "DECIMAL" => row
+                    .try_get::<String, _>(column_name)
+                    .ok()
+                    .map(Value::from)
+                    .unwrap_or(Value::Null),
+                // String types
+                "CHAR" | "VARCHAR" | "TEXT" | "TINYTEXT" | "MEDIUMTEXT" | "LONGTEXT" => row
+                    .try_get::<String, _>(column_name)
+                    .ok()
+                    .map(Value::from)
+                    .unwrap_or(Value::Null),
+                // Binary types
+                "BINARY" | "VARBINARY" | "BLOB" | "TINYBLOB" | "MEDIUMBLOB" | "LONGBLOB" => row
+                    .try_get::<Vec<u8>, _>(column_name)
+                    .ok()
+                    .map(|bytes| Value::String(base64::encode(&bytes)))
+                    .unwrap_or(Value::Null),
+                // Boolean type (typically stored as TINYINT(1))
+                "BOOL" | "BOOLEAN" => row
+                    .try_get::<bool, _>(column_name)
+                    .ok()
+                    .map(Value::from)
+                    .unwrap_or(Value::Null),
+                // Date and Time types
+                "DATE" => row
+                    .try_get::<NaiveDate, _>(column_name)
+                    .ok()
+                    .map(|d| Value::String(d.format("%Y-%m-%d").to_string()))
+                    .unwrap_or(Value::Null),
+                "TIME" => row
+                    .try_get::<NaiveTime, _>(column_name)
+                    .ok()
+                    .map(|t| Value::String(t.format("%H:%M:%S").to_string()))
+                    .unwrap_or(Value::Null),
+                "DATETIME" | "TIMESTAMP" => row
+                    .try_get::<NaiveDateTime, _>(column_name)
+                    .ok()
+                    .map(|dt| Value::String(dt.format("%Y-%m-%d %H:%M:%S").to_string()))
+                    .unwrap_or(Value::Null),
+                // JSON type
+                "JSON" => row
+                    .try_get::<Value, _>(column_name)
+                    .ok()
+                    .unwrap_or(Value::Null),
+                // Enum and Set types (treated as strings)
+                "ENUM" | "SET" => row
+                    .try_get::<String, _>(column_name)
+                    .ok()
+                    .map(Value::from)
+                    .unwrap_or(Value::Null),
+                // Default case for unknown types
+                _ => {
+                    warn!(
+                        "Unsupported type: {} for column: {}",
+                        type_name, column_name
+                    );
+                    Value::Null
+                }
+            };
+
+            map.insert(column_name.to_string(), value);
+        }
+
+        result.push(TableRow(map));
+    }
+
+    Ok(HttpResponse::Ok().json(result))
+}
+
+#[post("/v1/custom")]
+pub async fn custom_query_execute(
+    pool: web::Data<DbPool>,
+    query: web::Json<CustomQueryRequest>,
+) -> Result<impl Responder, ApiError> {
+    let pool = pool.get_pool().await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    // Validate that the query is NOT a SELECT statement since we have GET for that
+    let normalized_query = query.query.trim().to_uppercase();
+    if normalized_query.starts_with("SELECT") {
+        return Err(ApiError::InvalidInput(
+            "SELECT queries should use GET method instead".to_string(),
+        ));
+    }
+
+    // Execute the query without fetching results
+    sqlx::query(&query.query)
+        .execute(&pool)
+        .await
+        .map_err(|e| {
+            warn!("Database error: {}", e);
+            ApiError::Database(e)
+        })?;
+
+    // Return 201 Created for operations that create new resources
+    if normalized_query.starts_with("INSERT") || normalized_query.starts_with("CREATE") {
+        Ok(HttpResponse::Created().finish())
+    } else {
+        Ok(HttpResponse::Ok().finish())
+    }
 }
