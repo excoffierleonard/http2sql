@@ -28,6 +28,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .service(handlers::create_table)
             .service(handlers::delete_table)
+            .service(handlers::insert_rows)
     })
     .bind(format!("0.0.0.0:{}", config.server_port))?
     .workers(config.server_workers)
