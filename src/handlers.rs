@@ -9,6 +9,7 @@ use actix_web::{
 };
 use log::warn;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug)]
 pub enum ApiError {
@@ -47,7 +48,7 @@ struct ErrorResponse {
 }
 
 #[derive(Deserialize)]
-struct Column {
+struct TableColumn {
     name: String,
     data_type: String,
     constraints: Option<Vec<String>>,
@@ -56,8 +57,11 @@ struct Column {
 #[derive(Deserialize)]
 struct CreateTableRequest {
     table_name: String,
-    columns: Vec<Column>,
+    columns: Vec<TableColumn>,
 }
+
+#[derive(Deserialize, Serialize)]
+struct TableRow(std::collections::HashMap<String, Value>);
 
 #[post("/v1/tables")]
 pub async fn create_table(
@@ -102,6 +106,70 @@ pub async fn create_table(
     );
 
     sqlx::query(&query).execute(&pool).await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    Ok(HttpResponse::Created().finish())
+}
+
+#[post("/v1/tables/{table_name}/rows")]
+pub async fn insert_rows(
+    pool: web::Data<DbPool>,
+    table_name: Path<String>,
+    payload: web::Json<Vec<TableRow>>,
+) -> Result<impl Responder, ApiError> {
+    let pool = pool.get_pool().await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    let table_name = table_name.into_inner();
+    if table_name.is_empty() {
+        return Err(ApiError::InvalidInput("Table name is required".to_string()));
+    }
+
+    if payload.is_empty() {
+        return Err(ApiError::InvalidInput(
+            "At least one row is required".to_string(),
+        ));
+    }
+
+    // Get column names from the first row
+    let columns: Vec<String> = payload[0].0.keys().cloned().collect();
+    if columns.is_empty() {
+        return Err(ApiError::InvalidInput(
+            "Row data cannot be empty".to_string(),
+        ));
+    }
+
+    // Create placeholders for a single row
+    let row_placeholders = vec!["?"; columns.len()];
+    let single_row_placeholders = format!("({})", row_placeholders.join(", "));
+
+    // Create placeholders for all rows
+    let all_rows_placeholders = vec![single_row_placeholders; payload.len()];
+
+    // Construct the bulk insert query
+    let query = format!(
+        "INSERT INTO {} ({}) VALUES {}",
+        table_name,
+        columns.join(", "),
+        all_rows_placeholders.join(", ")
+    );
+
+    // Create a single query builder
+    let mut query_builder = sqlx::query(&query);
+
+    // Bind all values from all rows in order
+    for row in payload.iter() {
+        for column in &columns {
+            query_builder = query_builder.bind(row.0.get(column).cloned().unwrap_or(Value::Null));
+        }
+    }
+
+    // Execute single bulk insert
+    query_builder.execute(&pool).await.map_err(|e| {
         warn!("Database error: {}", e);
         ApiError::Database(e)
     })?;
