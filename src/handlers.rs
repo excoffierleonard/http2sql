@@ -9,6 +9,7 @@ use actix_web::{
 };
 use log::warn;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug)]
 pub enum ApiError {
@@ -59,6 +60,9 @@ struct CreateTableRequest {
     columns: Vec<Column>,
 }
 
+#[derive(Deserialize)]
+struct TableRow(std::collections::HashMap<String, Value>);
+
 #[post("/v1/tables")]
 pub async fn create_table(
     pool: web::Data<DbPool>,
@@ -105,6 +109,65 @@ pub async fn create_table(
         warn!("Database error: {}", e);
         ApiError::Database(e)
     })?;
+
+    Ok(HttpResponse::Created().finish())
+}
+
+#[post("/v1/tables/{table_name}/rows")]
+pub async fn insert_rows(
+    pool: web::Data<DbPool>,
+    table_name: Path<String>,
+    payload: web::Json<Vec<TableRow>>,
+) -> Result<impl Responder, ApiError> {
+    let pool = pool.get_pool().await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    let table_name = table_name.into_inner();
+    if table_name.is_empty() {
+        return Err(ApiError::InvalidInput("Table name is required".to_string()));
+    }
+
+    if payload.is_empty() {
+        return Err(ApiError::InvalidInput(
+            "At least one row is required".to_string(),
+        ));
+    }
+
+    // Get column names from the first row
+    let columns: Vec<String> = payload[0].0.keys().cloned().collect();
+    if columns.is_empty() {
+        return Err(ApiError::InvalidInput(
+            "Row data cannot be empty".to_string(),
+        ));
+    }
+
+    // Build the placeholders for MySQL (use ? instead of $1, $2, etc.)
+    let placeholders = vec!["?"; columns.len()];
+
+    // Construct the base query
+    let query = format!(
+        "INSERT INTO {} ({}) VALUES ({})",
+        table_name,
+        columns.join(", "),
+        placeholders.join(", ")
+    );
+
+    // Execute insert for each row
+    for row in payload.iter() {
+        let mut query_builder = sqlx::query(&query);
+
+        // Bind each value in the correct order
+        for column in &columns {
+            query_builder = query_builder.bind(row.0.get(column).cloned().unwrap_or(Value::Null));
+        }
+
+        query_builder.execute(&pool).await.map_err(|e| {
+            warn!("Database error: {}", e);
+            ApiError::Database(e)
+        })?;
+    }
 
     Ok(HttpResponse::Created().finish())
 }
