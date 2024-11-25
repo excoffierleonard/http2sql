@@ -48,7 +48,7 @@ struct ErrorResponse {
 }
 
 #[derive(Deserialize)]
-struct Column {
+struct TableColumn {
     name: String,
     data_type: String,
     constraints: Option<Vec<String>>,
@@ -57,10 +57,10 @@ struct Column {
 #[derive(Deserialize)]
 struct CreateTableRequest {
     table_name: String,
-    columns: Vec<Column>,
+    columns: Vec<TableColumn>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 struct TableRow(std::collections::HashMap<String, Value>);
 
 #[post("/v1/tables")]
