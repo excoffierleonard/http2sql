@@ -338,3 +338,38 @@ pub async fn custom_query_fetch(
 
     Ok(HttpResponse::Ok().json(result))
 }
+
+#[post("/v1/custom")]
+pub async fn custom_query_execute(
+    pool: web::Data<DbPool>,
+    query: web::Json<CustomQueryRequest>,
+) -> Result<impl Responder, ApiError> {
+    let pool = pool.get_pool().await.map_err(|e| {
+        warn!("Database error: {}", e);
+        ApiError::Database(e)
+    })?;
+
+    // Validate that the query is NOT a SELECT statement since we have GET for that
+    let normalized_query = query.query.trim().to_uppercase();
+    if normalized_query.starts_with("SELECT") {
+        return Err(ApiError::InvalidInput(
+            "SELECT queries should use GET method instead".to_string(),
+        ));
+    }
+
+    // Execute the query without fetching results
+    sqlx::query(&query.query)
+        .execute(&pool)
+        .await
+        .map_err(|e| {
+            warn!("Database error: {}", e);
+            ApiError::Database(e)
+        })?;
+
+    // Return 201 Created for operations that create new resources
+    if normalized_query.starts_with("INSERT") || normalized_query.starts_with("CREATE") {
+        Ok(HttpResponse::Created().finish())
+    } else {
+        Ok(HttpResponse::Ok().finish())
+    }
+}
