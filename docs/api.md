@@ -2,6 +2,21 @@
 
 This API provides endpoints for managing database tables and executing custom queries. All endpoints are prefixed with `/v1`.
 
+## Table of Contents
+1. [Endpoints](#endpoints)
+   - [Create Table](#create-table)
+   - [Insert Rows](#insert-rows)
+   - [Delete Table](#delete-table)
+   - [Execute Custom Query (SELECT)](#execute-custom-query-select)
+   - [Execute Custom Query (Non-SELECT)](#execute-custom-query-non-select)
+2. [Data Types](#data-types)
+   - [Numeric Types](#numeric-types)
+   - [String Types](#string-types)
+   - [Binary Types](#binary-types)
+   - [Date and Time Types](#date-and-time-types)
+   - [Other Types](#other-types)
+3. [Error Responses](#error-responses)
+
 ## Endpoints
 
 ### Create Table
