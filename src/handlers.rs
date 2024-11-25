@@ -66,6 +66,11 @@ struct CreateTableRequest {
 #[derive(Deserialize, Serialize)]
 struct TableRow(std::collections::HashMap<String, Value>);
 
+#[derive(Deserialize)]
+pub struct CustomQueryRequest {
+    query: String,
+}
+
 #[post("/v1/tables")]
 pub async fn create_table(
     pool: web::Data<DbPool>,
@@ -205,27 +210,31 @@ pub async fn delete_table(
     Ok(HttpResponse::NoContent().finish())
 }
 
-#[get("/v1/tables/{table_name}/rows")]
-pub async fn select_rows(
+#[get("/v1/custom")]
+pub async fn custom_query_fetch(
     pool: web::Data<DbPool>,
-    table_name: Path<String>,
+    query: web::Json<CustomQueryRequest>,
 ) -> Result<impl Responder, ApiError> {
     let pool = pool.get_pool().await.map_err(|e| {
         warn!("Database error: {}", e);
         ApiError::Database(e)
     })?;
 
-    let table_name = table_name.into_inner();
-    if table_name.is_empty() {
-        return Err(ApiError::InvalidInput("Table name is required".to_string()));
+    // Validate that the query is a SELECT statement
+    let normalized_query = query.query.trim().to_uppercase();
+    if !normalized_query.starts_with("SELECT") {
+        return Err(ApiError::InvalidInput(
+            "Only SELECT queries are allowed".to_string(),
+        ));
     }
 
-    let query = format!("SELECT * FROM {}", table_name);
-
-    let rows = sqlx::query(&query).fetch_all(&pool).await.map_err(|e| {
-        warn!("Database error: {}", e);
-        ApiError::Database(e)
-    })?;
+    let rows = sqlx::query(&query.query)
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| {
+            warn!("Database error: {}", e);
+            ApiError::Database(e)
+        })?;
 
     let mut result: Vec<TableRow> = Vec::with_capacity(rows.len());
 
