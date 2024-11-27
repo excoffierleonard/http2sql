@@ -191,9 +191,7 @@ async fn convert_rows_to_table_rows(rows: Vec<sqlx::mysql::MySqlRow>) -> Vec<Tab
     result
 }
 
-// Refactored route handlers
-#[post("/v1/tables")]
-pub async fn create_table(
+async fn handle_create_table(
     pool: web::Data<DbPool>,
     payload: web::Json<CreateTableRequest>,
 ) -> Result<impl Responder, ApiError> {
@@ -231,8 +229,7 @@ pub async fn create_table(
     Ok(HttpResponse::Created().finish())
 }
 
-#[post("/v1/tables/{table_name}/rows")]
-pub async fn insert_rows(
+async fn handle_insert_rows(
     pool: web::Data<DbPool>,
     table_name: Path<String>,
     payload: web::Json<Vec<TableRow>>,
@@ -281,8 +278,7 @@ pub async fn insert_rows(
     Ok(HttpResponse::Created().finish())
 }
 
-#[delete("/v1/tables/{table_name}")]
-pub async fn delete_table(
+async fn handle_delete_table(
     pool: web::Data<DbPool>,
     table_name: Path<String>,
 ) -> Result<impl Responder, ApiError> {
@@ -297,8 +293,7 @@ pub async fn delete_table(
     Ok(HttpResponse::NoContent().finish())
 }
 
-#[get("/v1/custom")]
-pub async fn custom_query_fetch(
+async fn handle_custom_query_fetch(
     pool: web::Data<DbPool>,
     query: web::Json<CustomQueryRequest>,
 ) -> Result<impl Responder, ApiError> {
@@ -323,8 +318,7 @@ pub async fn custom_query_fetch(
     Ok(HttpResponse::Ok().json(result))
 }
 
-#[post("/v1/custom")]
-pub async fn custom_query_execute(
+async fn handle_custom_query_execute(
     pool: web::Data<DbPool>,
     query: web::Json<CustomQueryRequest>,
 ) -> Result<impl Responder, ApiError> {
@@ -344,4 +338,45 @@ pub async fn custom_query_execute(
     } else {
         Ok(HttpResponse::Ok().finish())
     }
+}
+
+#[post("/v1/tables")]
+pub async fn create_table(
+    pool: web::Data<DbPool>,
+    payload: web::Json<CreateTableRequest>,
+) -> Result<impl Responder, ApiError> {
+    handle_create_table(pool, payload).await
+}
+
+#[post("/v1/tables/{table_name}/rows")]
+pub async fn insert_rows(
+    pool: web::Data<DbPool>,
+    table_name: Path<String>,
+    payload: web::Json<Vec<TableRow>>,
+) -> Result<impl Responder, ApiError> {
+    handle_insert_rows(pool, table_name, payload).await
+}
+
+#[delete("/v1/tables/{table_name}")]
+pub async fn delete_table(
+    pool: web::Data<DbPool>,
+    table_name: Path<String>,
+) -> Result<impl Responder, ApiError> {
+    handle_delete_table(pool, table_name).await
+}
+
+#[get("/v1/custom")]
+pub async fn custom_query_fetch(
+    pool: web::Data<DbPool>,
+    query: web::Json<CustomQueryRequest>,
+) -> Result<impl Responder, ApiError> {
+    handle_custom_query_fetch(pool, query).await
+}
+
+#[post("/v1/custom")]
+pub async fn custom_query_execute(
+    pool: web::Data<DbPool>,
+    query: web::Json<CustomQueryRequest>,
+) -> Result<impl Responder, ApiError> {
+    handle_custom_query_execute(pool, query).await
 }
