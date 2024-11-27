@@ -1,6 +1,4 @@
-mod config;
-mod db;
-mod handlers;
+use http2sql::{config, db, handlers};
 
 use actix_web::{
     middleware::{Compress, Logger},
