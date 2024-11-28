@@ -48,10 +48,10 @@ API documentation is available in [docs/api.md](docs/api.md).
 Useful commands for development:
 
 ```bash
-cargo check &&
-cargo clippy &&
-cargo fmt &&
-docker compose build &&
+cargo check && \
+cargo clippy && \
+cargo fmt && \
+docker compose build && \
 docker compose up
 ```
 
