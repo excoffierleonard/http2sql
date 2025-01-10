@@ -20,7 +20,7 @@ RUN touch src/main.rs && \
     cargo build --target x86_64-unknown-linux-musl --release
 
 # Step 2: Create final image
-FROM alpine
+FROM scratch
 
 WORKDIR /http2sql
 
