@@ -14,7 +14,7 @@ impl Config {
     pub fn build() -> Result<Self, ApiError> {
         dotenv().ok();
 
-        let database_url = var("HTTP2SQL_DATABASE_URL")?;
+        let database_url = var("DATABASE_URL")?;
 
         let server_port = var("HTTP2SQL_SERVER_PORT")
             .ok()

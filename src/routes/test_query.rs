@@ -1,10 +1,9 @@
 use crate::{db::DbPool, errors::ApiError};
 use actix_web::{body::BoxBody, get, web::Data, HttpRequest, HttpResponse, Responder, Result};
-use chrono::NaiveDateTime;
 use serde::Serialize;
-use sqlx::query_as;
+use sqlx::{query_as, types::chrono::NaiveDateTime};
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct User {
     id: i32,
     email: String,
@@ -12,7 +11,7 @@ struct User {
     created_at: NaiveDateTime,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct Users(Vec<User>);
 
 #[get("/v1/users")]
@@ -26,6 +25,8 @@ async fn custom_query(pool: Data<DbPool>) -> Result<Users, ApiError> {
     )
     .fetch_all(&pool)
     .await?;
+
+    println!("{:?}", users);
 
     Ok(Users(users))
 }
