@@ -1,3 +1,3 @@
-mod db_custom_query_fetch;
+mod test_query;
 
-pub use db_custom_query_fetch::custom_query_fetch;
+pub use test_query::custom_query;

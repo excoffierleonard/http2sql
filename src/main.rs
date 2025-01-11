@@ -20,7 +20,7 @@ async fn main() -> Result<()> {
             .wrap(Logger::default())
             .wrap(Compress::default())
             .app_data(Data::new(pool.clone()))
-            .service(routes::custom_query_fetch)
+            .service(routes::custom_query)
     })
     .bind(format!("0.0.0.0:{}", config.server_port))?
     .workers(config.workers)
