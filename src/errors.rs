@@ -60,12 +60,17 @@ mod tests {
         // Test each error variant's Display implementation
         let bad_request = ApiError::Database(sqlx::Error::RowNotFound);
         let internal_error = ApiError::InvalidInput("Wrong input".to_string());
+        let config_error = ApiError::ConfigError("Missing environment variable".to_string());
 
         assert_eq!(
             bad_request.to_string(),
             "Database error: no rows returned by a query that expected to return at least one row"
         );
         assert_eq!(internal_error.to_string(), "Invalid input: Wrong input");
+        assert_eq!(
+            config_error.to_string(),
+            "Config error: Missing environment variable"
+        );
     }
 
     #[test]
@@ -78,6 +83,10 @@ mod tests {
         assert_eq!(
             ApiError::InvalidInput("Wrong input".to_string()).status_code(),
             StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            ApiError::ConfigError("Missing environment variable".to_string()).status_code(),
+            StatusCode::INTERNAL_SERVER_ERROR
         );
     }
 }
