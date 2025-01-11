@@ -66,7 +66,7 @@ async fn convert_rows_to_table_rows(rows: Vec<MySqlRow>) -> Vec<TableRow> {
     result
 }
 
-pub fn convert_sql_value(row: &sqlx::mysql::MySqlRow, column: &MySqlColumn) -> Value {
+pub fn convert_sql_value(row: &MySqlRow, column: &MySqlColumn) -> Value {
     let column_name = column.name();
     let type_name = column.type_info().name();
 
