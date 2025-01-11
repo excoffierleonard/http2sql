@@ -1,8 +1,4 @@
-use crate::{
-    db::DbPool,
-    errors::ApiError,
-    handlers::{get_pool, CustomQueryRequest, TableRow},
-};
+use crate::{db::DbPool, errors::ApiError};
 use actix_web::{
     get,
     web::{Data, Json},
@@ -10,12 +6,21 @@ use actix_web::{
 };
 use base64::encode;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::{
     mysql::{MySqlColumn, MySqlRow},
     query, Column, Row, TypeInfo,
 };
 use std::collections::HashMap;
+
+#[derive(Deserialize)]
+pub struct CustomQueryRequest {
+    pub query: String,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct TableRow(pub std::collections::HashMap<String, Value>);
 
 #[get("/v1/custom")]
 async fn custom_query_fetch(
@@ -29,7 +34,7 @@ async fn handle_custom_query_fetch(
     pool: Data<DbPool>,
     received_query: Json<CustomQueryRequest>,
 ) -> Result<impl Responder, ApiError> {
-    let pool = get_pool(pool).await?;
+    let pool = pool.get_pool().await.map_err(ApiError::Database)?;
 
     let normalized_query = received_query.query.trim().to_uppercase();
     if !normalized_query.starts_with("SELECT") {

@@ -12,6 +12,7 @@ pub struct ErrorResponse {
 pub enum ApiError {
     Database(sqlx::Error),
     InvalidInput(String),
+    ConfigError(String),
 }
 
 impl std::fmt::Display for ApiError {
@@ -19,6 +20,7 @@ impl std::fmt::Display for ApiError {
         match self {
             Self::Database(e) => write!(f, "Database error: {}", e),
             Self::InvalidInput(e) => write!(f, "Invalid input: {}", e),
+            Self::ConfigError(e) => write!(f, "Config error: {}", e),
         }
     }
 }
@@ -30,6 +32,7 @@ impl ResponseError for ApiError {
         match self {
             Self::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::InvalidInput(_) => StatusCode::BAD_REQUEST,
+            Self::ConfigError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -39,6 +42,12 @@ impl ResponseError for ApiError {
         };
 
         HttpResponse::build(self.status_code()).json(error_response)
+    }
+}
+
+impl From<std::env::VarError> for ApiError {
+    fn from(err: std::env::VarError) -> Self {
+        ApiError::ConfigError(err.to_string())
     }
 }
 
