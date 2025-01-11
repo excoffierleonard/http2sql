@@ -51,6 +51,12 @@ impl From<std::env::VarError> for ApiError {
     }
 }
 
+impl From<sqlx::Error> for ApiError {
+    fn from(err: sqlx::Error) -> Self {
+        ApiError::Database(err)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
