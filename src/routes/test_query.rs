@@ -26,8 +26,6 @@ async fn custom_query(pool: Data<DbPool>) -> Result<Users, ApiError> {
     .fetch_all(&pool)
     .await?;
 
-    println!("{:?}", users);
-
     Ok(Users(users))
 }
 
