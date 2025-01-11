@@ -1,4 +1,4 @@
-use http2sql::{config, db, handlers};
+use http2sql::{config, db, routes};
 
 use actix_web::{
     middleware::{Compress, Logger},
@@ -24,11 +24,11 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .wrap(Compress::default())
             .app_data(web::Data::new(pool.clone()))
-            .service(handlers::create_table)
-            .service(handlers::delete_table)
-            .service(handlers::insert_rows)
-            .service(handlers::custom_query_fetch)
-            .service(handlers::custom_query_execute)
+            .service(routes::create_table)
+            .service(routes::delete_table)
+            .service(routes::insert_rows)
+            .service(routes::custom_query_fetch)
+            .service(routes::custom_query_execute)
     })
     .bind(format!("0.0.0.0:{}", config.server_port))?
     .workers(config.server_workers)
