@@ -6,8 +6,8 @@ use serial_test::serial;
 use sqlx::{query, types::chrono::NaiveDateTime};
 use std::env::var;
 
-#[actix_web::test]
-#[serial]
+// Logic to create test container will go here
+
 async fn setup_db() {
     dotenv().ok();
     let database_url = var("DATABASE_URL").unwrap();
@@ -49,11 +49,32 @@ async fn setup_db() {
     .execute(&pool)
     .await
     .unwrap();
+
+    query(
+        "INSERT INTO `users` (`email`, `password`) 
+        VALUES ('john.doe@gmail.com', 'randompassword1'), 
+               ('luke.warm@hotmail.fr', 'randompassword2')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    query(
+        "INSERT INTO `tags` (`user_id`, `name`) 
+        VALUES (1, 'tag1'), 
+               (1, 'tag2'), 
+               (2, 'tag3')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
 }
 
 #[actix_web::test]
 #[serial]
 async fn create_users() {
+    setup_db().await;
+
     #[derive(Serialize, Debug)]
     struct RequestUser {
         email: String,
@@ -114,12 +135,14 @@ async fn create_users() {
 #[actix_web::test]
 #[serial]
 async fn read_users() {
+    setup_db().await;
+
     #[derive(Deserialize, Debug)]
     struct User {
         id: i32,
         email: String,
         password: String,
-        created_at: NaiveDateTime,
+        // created_at: NaiveDateTime,
     }
 
     #[derive(Deserialize, Debug)]
