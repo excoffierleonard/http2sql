@@ -21,6 +21,7 @@ async fn main() -> Result<()> {
             .wrap(Compress::default())
             .app_data(Data::new(pool.clone()))
             .service(routes::custom_query)
+            .service(routes::create_users)
     })
     .bind(format!("0.0.0.0:{}", config.server_port))?
     .workers(config.workers)
