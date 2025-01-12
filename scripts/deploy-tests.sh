@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 curl --request GET \
 --url http://localhost:8080/v1/users
 

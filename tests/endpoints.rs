@@ -1,79 +1,59 @@
 use actix_web::{test, web::Data, App};
-use dotenv::dotenv;
 use http2sql::{db::DbPool, routes};
 use serde::{Deserialize, Serialize};
 use serial_test::serial;
-use sqlx::query;
-use std::env::var;
+use testcontainers_modules::{mariadb::Mariadb, testcontainers::runners::AsyncRunner};
 
-// Logic to create test container will go here
+async fn setup_container() -> (Mariadb, String) {
+    let mariadb = Mariadb::default().with_init_sql(
+        r#"
+            DROP TABLE IF EXISTS tags;
+            DROP TABLE IF EXISTS users;
+            
+            CREATE TABLE users (
+                `id` INT NOT NULL AUTO_INCREMENT,
+                `email` VARCHAR(255) NOT NULL,
+                `password` VARCHAR(255) NOT NULL,
+                `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`)
+            );
 
-async fn setup_db() {
-    dotenv().ok();
-    let database_url = var("DATABASE_URL").unwrap();
-    let pool = DbPool::new(database_url).get_pool().await.unwrap();
+            CREATE TABLE tags (
+                `id` INT NOT NULL AUTO_INCREMENT,
+                `user_id` INT NOT NULL,
+                `name` VARCHAR(255) NOT NULL,
+                `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+            );
 
-    query("DROP TABLE IF EXISTS tags")
-        .execute(&pool)
-        .await
-        .unwrap();
+            INSERT INTO `users` (`email`, `password`) 
+            VALUES ('john.doe@gmail.com', 'randompassword1'), 
+                   ('luke.warm@hotmail.fr', 'randompassword2');
 
-    query("DROP TABLE IF EXISTS users")
-        .execute(&pool)
-        .await
-        .unwrap();
+            INSERT INTO `tags` (`user_id`, `name`) 
+            VALUES (1, 'tag1'), 
+                   (1, 'tag2'), 
+                   (2, 'tag3');
+            "#
+        .to_string()
+        .into_bytes(),
+    );
 
-    query(
-        "CREATE TABLE users (
-            `id` INT NOT NULL AUTO_INCREMENT,
-            `email` VARCHAR(255) NOT NULL,
-            `password` VARCHAR(255) NOT NULL,
-            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (`id`)
-    )",
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
+    let container = mariadb.clone().start().await.unwrap();
+    let database_url = format!(
+        "mysql://root@{}:{}/test",
+        container.get_host().await.unwrap(),
+        container.get_host_port_ipv4(3306).await.unwrap()
+    );
 
-    query(
-        "CREATE TABLE tags (
-            `id` INT NOT NULL AUTO_INCREMENT,
-            `user_id` INT NOT NULL,
-            `name` VARCHAR(255) NOT NULL,
-            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (`id`),
-            FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
-    )",
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
-
-    query(
-        "INSERT INTO `users` (`email`, `password`) 
-        VALUES ('john.doe@gmail.com', 'randompassword1'), 
-               ('luke.warm@hotmail.fr', 'randompassword2')",
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
-
-    query(
-        "INSERT INTO `tags` (`user_id`, `name`) 
-        VALUES (1, 'tag1'), 
-               (1, 'tag2'), 
-               (2, 'tag3')",
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
+    (mariadb, database_url)
 }
 
 #[actix_web::test]
 #[serial]
 async fn create_users() {
-    setup_db().await;
+    let (_mariadb, database_url) = setup_container().await;
 
     #[derive(Serialize, Debug)]
     struct RequestUser {
@@ -91,8 +71,6 @@ async fn create_users() {
         message: String,
     }
 
-    dotenv().ok();
-    let database_url = var("DATABASE_URL").unwrap();
     let pool = DbPool::new(database_url);
 
     // Setup
@@ -135,14 +113,13 @@ async fn create_users() {
 #[actix_web::test]
 #[serial]
 async fn read_users() {
-    setup_db().await;
+    let (_mariadb, database_url) = setup_container().await;
 
     #[derive(Deserialize, Debug)]
     struct User {
         id: i32,
         email: String,
         password: String,
-        // created_at: NaiveDateTime,
     }
 
     #[derive(Deserialize, Debug)]
@@ -150,8 +127,6 @@ async fn read_users() {
         data: Vec<User>,
     }
 
-    dotenv().ok();
-    let database_url = var("DATABASE_URL").unwrap();
     let pool = DbPool::new(database_url);
 
     // Setup
