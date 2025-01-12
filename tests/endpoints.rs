@@ -1,13 +1,13 @@
 use actix_web::{test, web::Data, App};
 use http2sql::{db::DbPool, routes};
 use serde::{Deserialize, Serialize};
-use serial_test::serial;
 use testcontainers_modules::{
     mariadb::Mariadb,
     testcontainers::{runners::AsyncRunner, ContainerAsync},
 };
 
-async fn setup_container() -> (Mariadb, String, ContainerAsync<Mariadb>) {
+// Create a test container db with the predefined schema
+async fn setup_container() -> (String, ContainerAsync<Mariadb>) {
     let mariadb = Mariadb::default().with_init_sql(
         r#"
             DROP TABLE IF EXISTS tags;
@@ -43,20 +43,20 @@ async fn setup_container() -> (Mariadb, String, ContainerAsync<Mariadb>) {
         .into_bytes(),
     );
 
-    let container = mariadb.clone().start().await.unwrap();
+    let container = mariadb.start().await.unwrap();
     let database_url = format!(
         "mysql://root@{}:{}/test",
         container.get_host().await.unwrap(),
         container.get_host_port_ipv4(3306).await.unwrap()
     );
 
-    (mariadb, database_url, container)
+    (database_url, container)
 }
 
 #[actix_web::test]
-#[serial]
 async fn create_users() {
-    let (_mariadb, database_url, _container) = setup_container().await;
+    // Setup test container for db
+    let (database_url, _container) = setup_container().await;
 
     #[derive(Serialize, Debug)]
     struct RequestUser {
@@ -114,9 +114,9 @@ async fn create_users() {
 }
 
 #[actix_web::test]
-#[serial]
 async fn read_users() {
-    let (_mariadb, database_url, _container) = setup_container().await;
+    // Setup test container for db
+    let (database_url, _container) = setup_container().await;
 
     #[derive(Deserialize, Debug)]
     struct User {
