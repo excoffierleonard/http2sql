@@ -2,48 +2,51 @@ use actix_web::{test, web::Data, App};
 use dotenv::dotenv;
 use http2sql::{db::DbPool, routes};
 use serde::{Deserialize, Serialize};
-use sqlx::types::chrono::NaiveDateTime;
+use sqlx::{query, types::chrono::NaiveDateTime};
 use std::env::var;
 
 #[actix_web::test]
-async fn read_users() {
-    #[derive(Deserialize, Debug)]
-    struct User {
-        id: i32,
-        email: String,
-        password: String,
-        created_at: NaiveDateTime,
-    }
-
-    #[derive(Deserialize, Debug)]
-    struct Response {
-        data: Vec<User>,
-    }
-
+async fn setup_db() {
     dotenv().ok();
     let database_url = var("DATABASE_URL").unwrap();
-    let pool = DbPool::new(database_url);
+    let pool = DbPool::new(database_url).get_pool().await.unwrap();
 
-    // Setup
-    let app = test::init_service(
-        App::new()
-            .app_data(Data::new(pool.clone()))
-            .service(routes::custom_query),
+    query("DROP TABLE IF EXISTS tags")
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    query("DROP TABLE IF EXISTS users")
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    query(
+        "CREATE TABLE users (
+            `id` INT NOT NULL AUTO_INCREMENT,
+            `email` VARCHAR(255) NOT NULL,
+            `password` VARCHAR(255) NOT NULL,
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`)
+    )",
     )
-    .await;
+    .execute(&pool)
+    .await
+    .unwrap();
 
-    // Create request
-    let req = test::TestRequest::get().uri("/v1/users").to_request();
-
-    // Get response
-    let resp = test::call_service(&app, req).await;
-
-    // Assert the results
-    let status = resp.status();
-    assert!(status.is_success());
-
-    let body: Response = test::read_body_json(resp).await;
-    println!("{:?}", body);
+    query(
+        "CREATE TABLE tags (
+            `id` INT NOT NULL AUTO_INCREMENT,
+            `user_id` INT NOT NULL,
+            `name` VARCHAR(255) NOT NULL,
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+    )",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
 }
 
 #[actix_web::test]
@@ -102,5 +105,50 @@ async fn create_users() {
     assert!(status.is_success());
 
     let response_body: Response = test::read_body_json(resp).await;
-    println!("{:?}", response_body);
+    assert_eq!(response_body.message, "Successfully created 2 users");
+}
+
+#[actix_web::test]
+async fn read_users() {
+    #[derive(Deserialize, Debug)]
+    struct User {
+        id: i32,
+        email: String,
+        password: String,
+        created_at: NaiveDateTime,
+    }
+
+    #[derive(Deserialize, Debug)]
+    struct Response {
+        data: Vec<User>,
+    }
+
+    dotenv().ok();
+    let database_url = var("DATABASE_URL").unwrap();
+    let pool = DbPool::new(database_url);
+
+    // Setup
+    let app = test::init_service(
+        App::new()
+            .app_data(Data::new(pool.clone()))
+            .service(routes::custom_query),
+    )
+    .await;
+
+    // Create request
+    let req = test::TestRequest::get().uri("/v1/users").to_request();
+
+    // Get response
+    let resp = test::call_service(&app, req).await;
+
+    // Assert the results
+    let status = resp.status();
+    assert!(status.is_success());
+
+    let body: Response = test::read_body_json(resp).await;
+    assert_eq!(body.data.len(), 2);
+    assert_eq!(body.data[0].email, "john.doe@gmail.com");
+    assert_eq!(body.data[0].password, "randompassword1");
+    assert_eq!(body.data[1].email, "luke.warm@hotmail.fr");
+    assert_eq!(body.data[1].password, "randompassword2");
 }
