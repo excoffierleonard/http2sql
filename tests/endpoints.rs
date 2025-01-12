@@ -3,7 +3,7 @@ use dotenv::dotenv;
 use http2sql::{db::DbPool, routes};
 use serde::{Deserialize, Serialize};
 use serial_test::serial;
-use sqlx::{query, types::chrono::NaiveDateTime};
+use sqlx::query;
 use std::env::var;
 
 // Logic to create test container will go here
