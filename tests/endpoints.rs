@@ -8,40 +8,11 @@ use testcontainers_modules::{
 
 // Create a test container db with the predefined schema
 async fn setup_container() -> (String, ContainerAsync<Mariadb>) {
-    let mariadb = Mariadb::default().with_init_sql(
-        r#"
-            DROP TABLE IF EXISTS tags;
-            DROP TABLE IF EXISTS users;
-            
-            CREATE TABLE users (
-                `id` INT NOT NULL AUTO_INCREMENT,
-                `email` VARCHAR(255) NOT NULL,
-                `password` VARCHAR(255) NOT NULL,
-                `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (`id`)
-            );
-
-            CREATE TABLE tags (
-                `id` INT NOT NULL AUTO_INCREMENT,
-                `user_id` INT NOT NULL,
-                `name` VARCHAR(255) NOT NULL,
-                `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (`id`),
-                FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
-            );
-
-            INSERT INTO `users` (`email`, `password`) 
-            VALUES ('john.doe@gmail.com', 'randompassword1'), 
-                   ('luke.warm@hotmail.fr', 'randompassword2');
-
-            INSERT INTO `tags` (`user_id`, `name`) 
-            VALUES (1, 'tag1'), 
-                   (1, 'tag2'), 
-                   (2, 'tag3');
-            "#
-        .to_string()
-        .into_bytes(),
-    );
+    let init_sql = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/ressources/init_db.sql"
+    ));
+    let mariadb = Mariadb::default().with_init_sql(init_sql.to_string().into_bytes());
 
     let container = mariadb.start().await.unwrap();
     let database_url = format!(
