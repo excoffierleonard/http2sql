@@ -14,7 +14,9 @@ struct User {
 }
 
 #[derive(Deserialize, Debug)]
-struct Users(Vec<User>);
+struct Users {
+    data: Vec<User>,
+}
 
 #[actix_web::test]
 async fn get_users() {

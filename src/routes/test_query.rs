@@ -12,7 +12,9 @@ struct User {
 }
 
 #[derive(Serialize, Debug)]
-struct Users(Vec<User>);
+struct Users {
+    data: Vec<User>,
+}
 
 #[get("/v1/users")]
 async fn custom_query(pool: Data<DbPool>) -> Result<Users, ApiError> {
@@ -26,7 +28,7 @@ async fn custom_query(pool: Data<DbPool>) -> Result<Users, ApiError> {
     .fetch_all(&pool)
     .await?;
 
-    Ok(Users(users))
+    Ok(Users { data: users })
 }
 
 impl Responder for Users {
