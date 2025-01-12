@@ -14,6 +14,9 @@ RUN mkdir src && \
     cargo build --target x86_64-unknown-linux-musl --release && \
     rm src/main.rs
 
+# Copy .sqkx file here to have db schema available for the build
+COPY .sqlx .sqlx/
+
 COPY src src/
 
 RUN touch src/main.rs && \
