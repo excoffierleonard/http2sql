@@ -2,10 +2,12 @@ use actix_web::{test, web::Data, App};
 use dotenv::dotenv;
 use http2sql::{db::DbPool, routes};
 use serde::{Deserialize, Serialize};
+use serial_test::serial;
 use sqlx::{query, types::chrono::NaiveDateTime};
 use std::env::var;
 
 #[actix_web::test]
+#[serial]
 async fn setup_db() {
     dotenv().ok();
     let database_url = var("DATABASE_URL").unwrap();
@@ -50,6 +52,7 @@ async fn setup_db() {
 }
 
 #[actix_web::test]
+#[serial]
 async fn create_users() {
     #[derive(Serialize, Debug)]
     struct RequestUser {
@@ -109,6 +112,7 @@ async fn create_users() {
 }
 
 #[actix_web::test]
+#[serial]
 async fn read_users() {
     #[derive(Deserialize, Debug)]
     struct User {
@@ -147,8 +151,10 @@ async fn read_users() {
 
     let body: Response = test::read_body_json(resp).await;
     assert_eq!(body.data.len(), 2);
+    assert_eq!(body.data[0].id, 1);
     assert_eq!(body.data[0].email, "john.doe@gmail.com");
     assert_eq!(body.data[0].password, "randompassword1");
+    assert_eq!(body.data[1].id, 2);
     assert_eq!(body.data[1].email, "luke.warm@hotmail.fr");
     assert_eq!(body.data[1].password, "randompassword2");
 }
