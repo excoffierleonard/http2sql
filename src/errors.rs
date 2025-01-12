@@ -12,6 +12,7 @@ pub struct ErrorResponse {
 pub enum ApiError {
     Database(sqlx::Error),
     InvalidInput(String),
+    ConfigError(String),
 }
 
 impl std::fmt::Display for ApiError {
@@ -19,6 +20,7 @@ impl std::fmt::Display for ApiError {
         match self {
             Self::Database(e) => write!(f, "Database error: {}", e),
             Self::InvalidInput(e) => write!(f, "Invalid input: {}", e),
+            Self::ConfigError(e) => write!(f, "Config error: {}", e),
         }
     }
 }
@@ -30,6 +32,7 @@ impl ResponseError for ApiError {
         match self {
             Self::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::InvalidInput(_) => StatusCode::BAD_REQUEST,
+            Self::ConfigError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -42,6 +45,18 @@ impl ResponseError for ApiError {
     }
 }
 
+impl From<std::env::VarError> for ApiError {
+    fn from(err: std::env::VarError) -> Self {
+        ApiError::ConfigError(err.to_string())
+    }
+}
+
+impl From<sqlx::Error> for ApiError {
+    fn from(err: sqlx::Error) -> Self {
+        ApiError::Database(err)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -51,12 +66,17 @@ mod tests {
         // Test each error variant's Display implementation
         let bad_request = ApiError::Database(sqlx::Error::RowNotFound);
         let internal_error = ApiError::InvalidInput("Wrong input".to_string());
+        let config_error = ApiError::ConfigError("Missing environment variable".to_string());
 
         assert_eq!(
             bad_request.to_string(),
             "Database error: no rows returned by a query that expected to return at least one row"
         );
         assert_eq!(internal_error.to_string(), "Invalid input: Wrong input");
+        assert_eq!(
+            config_error.to_string(),
+            "Config error: Missing environment variable"
+        );
     }
 
     #[test]
@@ -69,6 +89,10 @@ mod tests {
         assert_eq!(
             ApiError::InvalidInput("Wrong input".to_string()).status_code(),
             StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            ApiError::ConfigError("Missing environment variable".to_string()).status_code(),
+            StatusCode::INTERNAL_SERVER_ERROR
         );
     }
 }

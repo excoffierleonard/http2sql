@@ -1,5 +1,5 @@
 use log::info;
-use sqlx::MySqlPool;
+use sqlx::{Error, MySqlPool};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -16,7 +16,7 @@ impl DbPool {
         }
     }
 
-    pub async fn get_pool(&self) -> Result<MySqlPool, sqlx::Error> {
+    pub async fn get_pool(&self) -> Result<MySqlPool, Error> {
         let mut guard = self.pool.lock().await;
 
         match &*guard {

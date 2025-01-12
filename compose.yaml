@@ -4,36 +4,34 @@ services:
       context: .
       dockerfile: dockerfile
     image: ghcr.io/excoffierleonard/http2sql
-    container_name: http2sql
+    container_name: http2sql-app
+    restart: unless-stopped
+    depends_on:
+      - db
     environment:
-      HTTP2SQL_DB_HOST: ${HTTP2SQL_DB_HOST:-http2sql-db}
-      HTTP2SQL_DB_PORT: ${HTTP2SQL_DB_PORT:-3306}
-      HTTP2SQL_DB_NAME: ${HTTP2SQL_DB_NAME:-http2sql-db}
-      HTTP2SQL_DB_USER: ${HTTP2SQL_DB_USER:-http2sql-db}
-      HTTP2SQL_DB_PASSWORD: ${HTTP2SQL_DB_PASSWORD:-http2sql-db}
+      DATABASE_URL: ${DATABASE_URL:-mysql://http2sql:http2sql@db:3306/http2sql}
     ports:
-      - "8080:8080"
+      - "${HTTP2SQL_SERVER_PORT:-8080}:8080"
     networks:
       - http2sql
-    restart: unless-stopped
-
+    
   # Here MariaDB is used as an example of a database service for devlopment purposes, in production you may use an external database service and delete this section.
-  mariadb:
+  db:
     image: mariadb
     container_name: http2sql-db
+    restart: unless-stopped
     environment:
       MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 1
-      MARIADB_DATABASE: ${HTTP2SQL_DB_NAME:-http2sql-db}
-      MARIADB_USER: ${HTTP2SQL_DB_USER:-http2sql-db}
-      MARIADB_PASSWORD: ${HTTP2SQL_DB_PASSWORD:-http2sql-db}
+      MARIADB_DATABASE: ${HTTP2SQL_DB_NAME:-http2sql}
+      MARIADB_USER: ${HTTP2SQL_DB_USER:-http2sql}
+      MARIADB_PASSWORD: ${HTTP2SQL_DB_PASSWORD:-http2sql}
     ports:
       - "${HTTP2SQL_DB_PORT:-3306}:3306"
     volumes:
       - http2sql-db:/var/lib/mysql
     networks:
       - http2sql
-    restart: unless-stopped
-
+    
 volumes:
   http2sql-db:
     name: http2sql-db
