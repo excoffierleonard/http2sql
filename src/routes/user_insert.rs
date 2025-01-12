@@ -56,6 +56,6 @@ async fn create_users(pool: Data<DbPool>, users: Json<Users>) -> Result<Response
     let result = query_builder.build().execute(&pool).await?;
 
     Ok(Response {
-        message: format!("Successfully inserted {} users", result.rows_affected()),
+        message: format!("Successfully created {} users", result.rows_affected()),
     })
 }
