@@ -8,11 +8,63 @@ use argon2::{
 pub struct Password(String);
 
 impl Password {
-    pub fn new(password: impl Into<String>) -> Self {
+    fn new(password: impl Into<String>) -> Self {
         Self(password.into())
     }
 
-    pub fn hash(&self) -> Result<String, ApiError> {
+    fn validate(&self) -> Result<(), ApiError> {
+        if self.0.is_empty() {
+            return Err(ApiError::InvalidInput(
+                "Password cannot be empty".to_string(),
+            ));
+        }
+
+        if !self.0.chars().all(|c| c.is_ascii()) {
+            return Err(ApiError::InvalidInput(
+                "Password must contain only ASCII characters".to_string(),
+            ));
+        }
+
+        if self.0.len() < 12 {
+            return Err(ApiError::InvalidInput(
+                "Password must be at least 12 characters long".to_string(),
+            ));
+        }
+
+        if self.0.len() > 64 {
+            return Err(ApiError::InvalidInput(
+                "Password must be at most 64 characters long".to_string(),
+            ));
+        }
+
+        if !self.0.chars().any(|c| c.is_ascii_lowercase()) {
+            return Err(ApiError::InvalidInput(
+                "Password must contain at least one lowercase letter".to_string(),
+            ));
+        }
+
+        if !self.0.chars().any(|c| c.is_ascii_uppercase()) {
+            return Err(ApiError::InvalidInput(
+                "Password must contain at least one uppercase letter".to_string(),
+            ));
+        }
+
+        if !self.0.chars().any(|c| c.is_ascii_digit()) {
+            return Err(ApiError::InvalidInput(
+                "Password must contain at least one digit".to_string(),
+            ));
+        }
+
+        if !self.0.chars().any(|c| !c.is_ascii_alphanumeric()) {
+            return Err(ApiError::InvalidInput(
+                "Password must contain at least one special character".to_string(),
+            ));
+        }
+
+        Ok(())
+    }
+
+    fn hash(&self) -> Result<String, ApiError> {
         let salt = SaltString::generate(&mut OsRng);
         let argon2 = Argon2::default();
 
@@ -21,7 +73,7 @@ impl Password {
         Ok(hash)
     }
 
-    pub fn verify(&self, hash: &str) -> Result<bool, ApiError> {
+    fn verify(&self, hash: &str) -> Result<bool, ApiError> {
         let hash = PasswordHash::new(hash)?;
         let argon2 = Argon2::default();
 
@@ -34,6 +86,30 @@ impl Password {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn validate_password() {
+        // Test empty password
+        assert!(Password::new("").validate().is_err());
+
+        // Test non-ASCII characters
+        assert!(Password::new("😀".repeat(12)).validate().is_err());
+
+        // Test exact boundary conditions
+        assert!(Password::new("a".repeat(11)).validate().is_err());
+        assert!(Password::new("a".repeat(65)).validate().is_err());
+
+        // Test required characters
+        assert!(Password::new("abcdefghij1!").validate().is_err());
+        assert!(Password::new("ABCDEFGHIJ1!").validate().is_err());
+        assert!(Password::new("Abcdefghijk!").validate().is_err());
+        assert!(Password::new("Abcdefghijk1").validate().is_err());
+
+        // Test valid passwords
+        assert!(Password::new("Abcd123!efgh").validate().is_ok());
+        assert!(Password::new("P@ssw0rd585.").validate().is_ok());
+        assert!(Password::new("Super$3cret!Pass").validate().is_ok());
+    }
 
     #[test]
     fn hash_password() {
@@ -57,12 +133,18 @@ mod tests {
 
     #[test]
     fn verify_password() {
+        // Test a matching password
         let password = Password::new("password");
         let hash = password.hash().unwrap();
+        assert!(password.verify(&hash).unwrap());
 
-        let is_valid = password.verify(&hash).unwrap();
+        // Test a non-matching password
+        let different_password = Password::new("different_password");
+        let different_hash = different_password.hash().unwrap();
+        assert!(!password.verify(&different_hash).unwrap());
 
-        // Ensure that the password verification is successful
-        assert!(is_valid);
+        // Test an invalid hash
+        let invalid_hash = "random_string";
+        assert!(password.verify(&invalid_hash).is_err());
     }
 }

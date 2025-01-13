@@ -1116,6 +1116,7 @@ dependencies = [
  "env_logger",
  "log",
  "num_cpus",
+ "rand",
  "serde",
  "serde_json",
  "serial_test",
