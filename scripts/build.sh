@@ -24,7 +24,7 @@ cargo bench --workspace
 cargo test --workspace -- --ignored 
 
 # Build for production
-cargo build --release
+cargo build --target x86_64-unknown-linux-musl --release
 
 # Build Docker image
 docker compose build
