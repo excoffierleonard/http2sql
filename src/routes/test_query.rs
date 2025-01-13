@@ -18,14 +18,12 @@ struct Users {
 
 #[get("/v1/users")]
 async fn custom_query(pool: Data<DbPool>) -> Result<Users, ApiError> {
-    let pool = pool.get_pool().await?;
-
     let users = query_as!(
         User,
         "SELECT id, email, password, created_at 
         FROM users;"
     )
-    .fetch_all(&pool)
+    .fetch_all(pool.get_pool())
     .await?;
 
     Ok(Users { data: users })

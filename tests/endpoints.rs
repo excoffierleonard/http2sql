@@ -44,7 +44,7 @@ async fn create_users() {
 
     // Setup
     let (database_url, _container) = setup_container().await;
-    let pool = DbPool::new(database_url);
+    let pool = DbPool::new(database_url).await.unwrap();
     let app = test::init_service(
         App::new()
             .app_data(Data::new(pool))
@@ -97,7 +97,7 @@ async fn read_users() {
 
     // Setup
     let (database_url, _container) = setup_container().await;
-    let pool = DbPool::new(database_url);
+    let pool = DbPool::new(database_url).await.unwrap();
     let app = test::init_service(
         App::new()
             .app_data(Data::new(pool))

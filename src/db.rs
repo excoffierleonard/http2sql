@@ -1,41 +1,18 @@
-use log::info;
-use sqlx::{Error, MySqlPool};
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use crate::errors::ApiError;
+use sqlx::MySqlPool;
 
+#[derive(Clone)]
 pub struct DbPool {
-    pool: Arc<Mutex<Option<MySqlPool>>>,
-    url: String,
+    pool: MySqlPool,
 }
 
 impl DbPool {
-    pub fn new(url: String) -> Self {
-        Self {
-            pool: Arc::new(Mutex::new(None)),
-            url,
-        }
+    pub async fn new(url: String) -> Result<Self, ApiError> {
+        let pool = MySqlPool::connect(&url).await?;
+        Ok(Self { pool })
     }
 
-    pub async fn get_pool(&self) -> Result<MySqlPool, Error> {
-        let mut guard = self.pool.lock().await;
-
-        match &*guard {
-            Some(pool) => Ok(pool.clone()),
-            None => {
-                info!("Creating new database connection");
-                let pool = MySqlPool::connect(&self.url).await?;
-                *guard = Some(pool.clone());
-                Ok(pool)
-            }
-        }
-    }
-}
-
-impl Clone for DbPool {
-    fn clone(&self) -> Self {
-        Self {
-            pool: self.pool.clone(),
-            url: self.url.clone(),
-        }
+    pub fn get_pool(&self) -> &MySqlPool {
+        &self.pool
     }
 }
