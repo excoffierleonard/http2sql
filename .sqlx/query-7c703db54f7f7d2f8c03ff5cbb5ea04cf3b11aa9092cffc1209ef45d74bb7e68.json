@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT id, email, password, created_at \n        FROM users;",
+  "query": "SELECT id, email, password, created_at FROM users;",
   "describe": {
     "columns": [
       {
@@ -54,5 +54,5 @@
       false
     ]
   },
-  "hash": "b24aebaa3e4f6d8d730c9627dead7b585eed1a602989ddd77caeb3e80e6cc6bd"
+  "hash": "7c703db54f7f7d2f8c03ff5cbb5ea04cf3b11aa9092cffc1209ef45d74bb7e68"
 }
