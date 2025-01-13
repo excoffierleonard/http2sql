@@ -8,11 +8,11 @@ use argon2::{
 pub struct Password(String);
 
 impl Password {
-    fn new(password: impl Into<String>) -> Self {
+    pub fn new(password: impl Into<String>) -> Self {
         Self(password.into())
     }
 
-    fn validate(&self) -> Result<(), ApiError> {
+    pub fn validate(&self) -> Result<(), ApiError> {
         let validations = [
             (self.0.is_empty(), "Password cannot be empty"),
             (
@@ -54,7 +54,7 @@ impl Password {
         Ok(())
     }
 
-    fn hash(&self) -> Result<String, ApiError> {
+    pub fn hash(&self) -> Result<String, ApiError> {
         let salt = SaltString::generate(&mut OsRng);
         let argon2 = Argon2::default();
 
@@ -63,7 +63,7 @@ impl Password {
         Ok(hash)
     }
 
-    fn verify(&self, hash: &str) -> Result<bool, ApiError> {
+    pub fn verify(&self, hash: &str) -> Result<bool, ApiError> {
         let hash = PasswordHash::new(hash)?;
         let argon2 = Argon2::default();
 
