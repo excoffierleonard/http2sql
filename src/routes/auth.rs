@@ -13,52 +13,42 @@ impl Password {
     }
 
     fn validate(&self) -> Result<(), ApiError> {
-        if self.0.is_empty() {
-            return Err(ApiError::InvalidInput(
-                "Password cannot be empty".to_string(),
-            ));
-        }
+        let validations = [
+            (self.0.is_empty(), "Password cannot be empty"),
+            (
+                !self.0.chars().all(|c| c.is_ascii()),
+                "Password must contain only ASCII characters",
+            ),
+            (
+                self.0.len() < 12,
+                "Password must be at least 12 characters long",
+            ),
+            (
+                self.0.len() > 64,
+                "Password must be at most 64 characters long",
+            ),
+            (
+                !self.0.chars().any(|c| c.is_ascii_lowercase()),
+                "Password must contain at least one lowercase letter",
+            ),
+            (
+                !self.0.chars().any(|c| c.is_ascii_uppercase()),
+                "Password must contain at least one uppercase letter",
+            ),
+            (
+                !self.0.chars().any(|c| c.is_ascii_digit()),
+                "Password must contain at least one digit",
+            ),
+            (
+                !self.0.chars().any(|c| !c.is_ascii_alphanumeric()),
+                "Password must contain at least one special character",
+            ),
+        ];
 
-        if !self.0.chars().all(|c| c.is_ascii()) {
-            return Err(ApiError::InvalidInput(
-                "Password must contain only ASCII characters".to_string(),
-            ));
-        }
-
-        if self.0.len() < 12 {
-            return Err(ApiError::InvalidInput(
-                "Password must be at least 12 characters long".to_string(),
-            ));
-        }
-
-        if self.0.len() > 64 {
-            return Err(ApiError::InvalidInput(
-                "Password must be at most 64 characters long".to_string(),
-            ));
-        }
-
-        if !self.0.chars().any(|c| c.is_ascii_lowercase()) {
-            return Err(ApiError::InvalidInput(
-                "Password must contain at least one lowercase letter".to_string(),
-            ));
-        }
-
-        if !self.0.chars().any(|c| c.is_ascii_uppercase()) {
-            return Err(ApiError::InvalidInput(
-                "Password must contain at least one uppercase letter".to_string(),
-            ));
-        }
-
-        if !self.0.chars().any(|c| c.is_ascii_digit()) {
-            return Err(ApiError::InvalidInput(
-                "Password must contain at least one digit".to_string(),
-            ));
-        }
-
-        if !self.0.chars().any(|c| !c.is_ascii_alphanumeric()) {
-            return Err(ApiError::InvalidInput(
-                "Password must contain at least one special character".to_string(),
-            ));
+        for (condition, message) in validations {
+            if condition {
+                return Err(ApiError::InvalidInput(message.to_string()));
+            }
         }
 
         Ok(())
