@@ -19,20 +19,21 @@ COPY .sqlx .sqlx/
 
 COPY src src/
 
-RUN touch src/main.rs && \
-    cargo build --target x86_64-unknown-linux-musl --release
+# Update the timestamp of the main file to force a rebuild
+RUN touch src/main.rs
+
+# Final build
+RUN cargo build --target x86_64-unknown-linux-musl --release
 
 # Step 2: Create final image
 FROM scratch
 
 WORKDIR /http2sql
 
-ENV HTTP2SQL_DB_HOST=http2sql-db
-ENV HTTP2SQL_DB_PORT=3306
-ENV HTTP2SQL_DB_NAME=http2sql
-ENV HTTP2SQL_DB_USER=http2sql
-ENV HTTP2SQL_DB_PASSWORD=http2sql
+ENV DATABASE_URL="mysql://http2sql:http2sql@db:3306/http2sql"
 
 COPY --from=builder /http2sql/target/x86_64-unknown-linux-musl/release/http2sql .
+
+EXPOSE 8080
 
 CMD ["./http2sql"]
