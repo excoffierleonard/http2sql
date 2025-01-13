@@ -1,2 +1,30 @@
+#!/bin/bash
+
+# Exit on any error
+set -e
+
+# Clean and check
 cargo install sqlx-cli
 cargo sqlx prepare
+cargo update
+cargo clean
+cargo check --workspace
+cargo clippy --workspace -- -D warnings
+cargo fmt --all
+cargo audit
+# Maybe use it when it is out of nightly
+# cargo udeps --workspace
+
+# Documentation
+cargo doc --workspace --no-deps
+
+# Testing and benchmarking
+cargo test --workspace
+cargo bench --workspace
+cargo test --workspace -- --ignored 
+
+# Build for production
+cargo build --release
+
+# Build Docker image
+docker compose build

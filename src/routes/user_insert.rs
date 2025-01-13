@@ -34,8 +34,6 @@ impl Responder for Response {
 
 #[post("/v1/users")]
 async fn create_users(pool: Data<DbPool>, users: Json<Users>) -> Result<Response, ApiError> {
-    let pool = pool.get_pool().await?;
-
     // Don't proceed if there's no data to insert
     if users.data.is_empty() {
         return Ok(Response {
@@ -53,7 +51,7 @@ async fn create_users(pool: Data<DbPool>, users: Json<Users>) -> Result<Response
     });
 
     // Execute the batch insert
-    let result = query_builder.build().execute(&pool).await?;
+    let result = query_builder.build().execute(pool.get_pool()).await?;
 
     Ok(Response {
         message: format!("Successfully created {} users", result.rows_affected()),

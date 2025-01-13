@@ -13,7 +13,9 @@ async fn main() -> Result<()> {
 
     let config = Config::build().map_err(|e| Error::new(ErrorKind::Other, e))?;
 
-    let pool = DbPool::new(config.database_url);
+    let pool = DbPool::new(config.database_url)
+        .await
+        .map_err(|e| Error::new(ErrorKind::Other, e))?;
 
     HttpServer::new(move || {
         App::new()

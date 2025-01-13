@@ -26,9 +26,6 @@ async fn setup_container() -> (String, ContainerAsync<Mariadb>) {
 
 #[actix_web::test]
 async fn create_users() {
-    // Setup test container for db
-    let (database_url, _container) = setup_container().await;
-
     #[derive(Serialize, Debug)]
     struct RequestUser {
         email: String,
@@ -45,12 +42,12 @@ async fn create_users() {
         message: String,
     }
 
-    let pool = DbPool::new(database_url);
-
     // Setup
+    let (database_url, _container) = setup_container().await;
+    let pool = DbPool::new(database_url).await.unwrap();
     let app = test::init_service(
         App::new()
-            .app_data(Data::new(pool.clone()))
+            .app_data(Data::new(pool))
             .service(routes::create_users),
     )
     .await;
@@ -86,9 +83,6 @@ async fn create_users() {
 
 #[actix_web::test]
 async fn read_users() {
-    // Setup test container for db
-    let (database_url, _container) = setup_container().await;
-
     #[derive(Deserialize, Debug)]
     struct User {
         id: i32,
@@ -101,12 +95,12 @@ async fn read_users() {
         data: Vec<User>,
     }
 
-    let pool = DbPool::new(database_url);
-
     // Setup
+    let (database_url, _container) = setup_container().await;
+    let pool = DbPool::new(database_url).await.unwrap();
     let app = test::init_service(
         App::new()
-            .app_data(Data::new(pool.clone()))
+            .app_data(Data::new(pool))
             .service(routes::custom_query),
     )
     .await;
