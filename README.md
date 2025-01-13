@@ -13,8 +13,16 @@ REST API service in Rust that transforms HTTP requests into SQL queries.
 
 ## 🛠 Prerequisites
 
+For deployment:
+
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
+
+For development:
+
+- [Rust](https://www.rust-lang.org/learn/get-started)
+- [SQLx CLI](https://crates.io/crates/sqlx-cli)
+- [Docker](https://docs.docker.com/get-docker/)
 
 ## ⚙ Configuration
 
@@ -22,21 +30,17 @@ The service can be configured using the following environment variables.
 
 Database connection:
 
-- `HTTP2SQL_DB_HOST`: The host of the database to connect to. (default: http2sql-db)
-- `HTTP2SQL_DB_PORT`: The port of the database to connect to. (default: 3306)
-- `HTTP2SQL_DB_NAME`: The name of the database to connect to. (default: http2sql-db)
-- `HTTP2SQL_DB_USER`: The user to use to connect to the database. (default: http2sql-db)
-- `HTTP2SQL_DB_PASSWORD`: The password to use to connect to the database. (default: http2sql-db)
+- `DATABASE_URL`: The host of the database to connect to. This variable is required for both deployment and development.
 
 Server configuration:
 
 - `HTTP2SQL_SERVER_PORT`: The port to listen on for incoming HTTP requests. (default: 8080)
-- `HTTP2SQL_SERVER_WORKERS`: The number of worker threads to use for handling incoming HTTP requests. (default: all available cores)
 
 ## 🚀 Deployment
 
 ```bash
-curl -o compose.yaml https://raw.githubusercontent.com/excoffierleonard/http2sql/refs/heads/main/compose.yaml && docker compose up -d
+curl -o compose.yaml https://raw.githubusercontent.com/excoffierleonard/http2sql/refs/heads/main/compose.yaml && \
+docker compose up -d
 ```
 
 ## 📖 API Documentation
@@ -47,12 +51,18 @@ API documentation is available in [docs/api.md](docs/api.md).
 
 Useful commands for development:
 
+- Full build:
+
 ```bash
-cargo check && \
-cargo clippy && \
-cargo fmt && \
-docker compose build && \
-docker compose up
+chmod +x ./scripts/build.sh && \
+./scripts/build.sh
+```
+
+- Deployment tests:
+
+```bash
+chmod +x ./scripts/deploy-tests.sh && \
+./scripts/deploy-tests.sh
 ```
 
 ## 📜 License

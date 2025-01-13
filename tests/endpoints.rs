@@ -26,6 +26,7 @@ async fn setup_container() -> (String, ContainerAsync<Mariadb>) {
 
 #[actix_web::test]
 async fn create_users() {
+    // Test-specific request types
     #[derive(Serialize, Debug)]
     struct RequestUser {
         email: String,
@@ -37,9 +38,12 @@ async fn create_users() {
         data: Vec<RequestUser>,
     }
 
+    // Test-specific response type
     #[derive(Deserialize, Debug)]
     struct Response {
-        message: String,
+        data: Option<()>,
+        message: Option<String>,
+        affected_rows: Option<u64>,
     }
 
     // Setup
@@ -78,13 +82,19 @@ async fn create_users() {
     assert!(status.is_success());
 
     let response_body: Response = test::read_body_json(resp).await;
-    assert_eq!(response_body.message, "Successfully created 2 users");
+    assert_eq!(response_body.affected_rows, Some(2));
+    assert_eq!(
+        response_body.message,
+        Some("Users created successfully".to_string())
+    );
+    assert_eq!(response_body.data, None);
 }
 
 #[actix_web::test]
 async fn read_users() {
+    // Test-specific types
     #[derive(Deserialize, Debug)]
-    struct User {
+    struct ResponseUser {
         id: i32,
         email: String,
         password: String,
@@ -92,7 +102,9 @@ async fn read_users() {
 
     #[derive(Deserialize, Debug)]
     struct Response {
-        data: Vec<User>,
+        data: Option<Vec<ResponseUser>>,
+        _message: Option<String>,
+        _affected_rows: Option<u64>,
     }
 
     // Setup
@@ -116,11 +128,12 @@ async fn read_users() {
     assert!(status.is_success());
 
     let body: Response = test::read_body_json(resp).await;
-    assert_eq!(body.data.len(), 2);
-    assert_eq!(body.data[0].id, 1);
-    assert_eq!(body.data[0].email, "john.doe@gmail.com");
-    assert_eq!(body.data[0].password, "randompassword1");
-    assert_eq!(body.data[1].id, 2);
-    assert_eq!(body.data[1].email, "luke.warm@hotmail.fr");
-    assert_eq!(body.data[1].password, "randompassword2");
+    let users = body.data.unwrap();
+    assert_eq!(users.len(), 2);
+    assert_eq!(users[0].id, 1);
+    assert_eq!(users[0].email, "john.doe@gmail.com");
+    assert_eq!(users[0].password, "randompassword1");
+    assert_eq!(users[1].id, 2);
+    assert_eq!(users[1].email, "luke.warm@hotmail.fr");
+    assert_eq!(users[1].password, "randompassword2");
 }
