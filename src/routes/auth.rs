@@ -4,24 +4,31 @@ use argon2::{
     Argon2, PasswordHasher, PasswordVerifier,
 };
 
-fn hash_password(password: &str) -> Result<String, ApiError> {
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
+#[derive(Debug, Clone)]
+pub struct Password(String);
 
-    let hash = argon2
-        .hash_password(password.as_bytes(), &salt)?
-        .to_string();
+impl Password {
+    pub fn new(password: impl Into<String>) -> Self {
+        Self(password.into())
+    }
 
-    Ok(hash)
-}
+    pub fn hash(&self) -> Result<String, ApiError> {
+        let salt = SaltString::generate(&mut OsRng);
+        let argon2 = Argon2::default();
 
-fn verify_password(password: &str, hash: &str) -> Result<bool, ApiError> {
-    let hash = PasswordHash::new(hash)?;
-    let argon2 = Argon2::default();
+        let hash = argon2.hash_password(self.0.as_bytes(), &salt)?.to_string();
 
-    let is_valid = argon2.verify_password(password.as_bytes(), &hash).is_ok();
+        Ok(hash)
+    }
 
-    Ok(is_valid)
+    pub fn verify(&self, hash: &str) -> Result<bool, ApiError> {
+        let hash = PasswordHash::new(hash)?;
+        let argon2 = Argon2::default();
+
+        let is_valid = argon2.verify_password(self.0.as_bytes(), &hash).is_ok();
+
+        Ok(is_valid)
+    }
 }
 
 #[cfg(test)]
@@ -29,30 +36,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn standard_hash_password() {
-        let password = "password";
+    fn hash_password() {
+        let password = Password::new("password");
 
-        let hash1 = hash_password(password).unwrap();
-        let hash2 = hash_password(password).unwrap();
+        let hash1 = password.hash().unwrap();
+        let hash2 = password.hash().unwrap();
 
-        assert_ne!(password, hash1);
-        assert_ne!(password, hash2);
+        // Ensure that the password is not stored in plain text
+        assert_ne!(password.0, hash1);
+        assert_ne!(password.0, hash2);
+
+        // Ensure that the hashing function is not deterministic
         assert_ne!(hash1, hash2);
 
+        // Ensure that the hash is of constant and expected length
         const EXPECTED_LENGTH: usize = 97;
-
         assert_eq!(hash1.len(), EXPECTED_LENGTH);
         assert_eq!(hash2.len(), EXPECTED_LENGTH);
     }
 
     #[test]
-    fn standard_verify_password() {
-        let password = "password";
+    fn verify_password() {
+        let password = Password::new("password");
+        let hash = password.hash().unwrap();
 
-        let hash = hash_password(password).unwrap();
+        let is_valid = password.verify(&hash).unwrap();
 
-        let is_valid = verify_password(password, &hash).unwrap();
-
+        // Ensure that the password verification is successful
         assert!(is_valid);
     }
 }
