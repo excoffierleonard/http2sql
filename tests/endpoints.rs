@@ -103,8 +103,8 @@ async fn read_users() {
     #[derive(Deserialize, Debug)]
     struct Response {
         data: Option<Vec<ResponseUser>>,
-        message: Option<String>,
-        affected_rows: Option<u64>,
+        _message: Option<String>,
+        _affected_rows: Option<u64>,
     }
 
     // Setup
