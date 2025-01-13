@@ -1,3 +1,4 @@
+mod auth;
 mod test_query;
 mod user_insert;
 
