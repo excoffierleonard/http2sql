@@ -81,16 +81,20 @@ GET /v1/users
 {
     "data": [
         {
-            "id": 1,
             "email": "john.doe@gmail.com",
-            "created_at": "2025-01-14T06:06:05"
-        },
-        {
-            "id": 2,
-            "email": "luke.warm@hotmail.fr",
-            "created_at": "2025-01-14T14:36:06"
+            "created_at": "2025-01-14T16:22:32",
+            "tags": [
+                {
+                    "name": "tag1",
+                    "created_at": "2025-01-14T16:22:32"
+                },
+                {
+                    "name": "tag2",
+                    "created_at": "2025-01-14T16:22:32"
+                }
+            ]
         }
     ],
-    "message": null
+    "message": "User metadata retrieved successfully"
 }
 ```

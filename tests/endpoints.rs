@@ -176,8 +176,10 @@ async fn read_users() {
     assert!(resp.status().is_success());
 
     let body: ResponseBody = test::read_body_json(resp).await;
+
     let message = body.message;
     assert_eq!(message, "User metadata retrieved successfully");
+
     let users: Vec<ResponseUser> = body.data;
     assert_eq!(users.len(), 1);
     assert_eq!(users[0].email, "john.doe@gmail.com");
