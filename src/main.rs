@@ -1,6 +1,6 @@
 use actix_web::{
     middleware::{Compress, Logger},
-    web::Data,
+    web::{scope, Data},
     App, HttpServer,
 };
 use env_logger::{init_from_env, Env};
@@ -22,8 +22,12 @@ async fn main() -> Result<()> {
             .wrap(Logger::default())
             .wrap(Compress::default())
             .app_data(Data::new(pool.clone()))
-            .service(routes::custom_query)
-            .service(routes::create_users)
+            .service(
+                scope("/v1")
+                    .service(routes::register_user)
+                    .service(routes::login_user)
+                    .service(routes::custom_query),
+            )
     })
     .bind(format!("0.0.0.0:{}", config.server_port))?
     .workers(config.workers)

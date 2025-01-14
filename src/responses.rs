@@ -3,9 +3,8 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct ApiResponse<T> {
-    pub data: Option<T>,
-    pub message: Option<String>,
-    pub affected_rows: Option<u64>,
+    data: Option<T>,
+    message: Option<String>,
 }
 
 impl<T: Serialize> Responder for ApiResponse<T> {
@@ -17,27 +16,7 @@ impl<T: Serialize> Responder for ApiResponse<T> {
 }
 
 impl<T> ApiResponse<T> {
-    pub fn data(data: T) -> Self {
-        Self {
-            data: Some(data),
-            message: None,
-            affected_rows: None,
-        }
-    }
-
-    pub fn message(message: impl Into<String>) -> Self {
-        Self {
-            data: None,
-            message: Some(message.into()),
-            affected_rows: Some(0),
-        }
-    }
-
-    pub fn executed(affected_rows: u64, message: impl Into<String>) -> Self {
-        Self {
-            data: None,
-            message: Some(message.into()),
-            affected_rows: Some(affected_rows),
-        }
+    pub fn new(data: Option<T>, message: Option<String>) -> Self {
+        Self { data, message }
     }
 }

@@ -1,5 +1,6 @@
+mod authentification;
 mod test_query;
-mod user_insert;
 
+pub use authentification::login_user;
+pub use authentification::register_user;
 pub use test_query::custom_query;
-pub use user_insert::create_users;

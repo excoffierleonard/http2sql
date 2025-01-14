@@ -5,8 +5,8 @@ DROP TABLE IF EXISTS users;
 -- Create the schema
 CREATE TABLE users (
     `id` INT NOT NULL AUTO_INCREMENT,
-    `email` VARCHAR(255) NOT NULL,
-    `password` VARCHAR(255) NOT NULL,
+    `email` VARCHAR(255) NOT NULL UNIQUE,
+    `password` CHAR(97) NOT NULL,
     `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`)
 );
@@ -20,9 +20,10 @@ CREATE TABLE tags (
 );
 -- Insert some mock data
 INSERT INTO `users` (`email`, `password`)
-VALUES ('john.doe@gmail.com', 'randompassword1'),
-    ('luke.warm@hotmail.fr', 'randompassword2');
+VALUES (
+        'john.doe@gmail.com',
+        '$argon2id$v=19$m=19456,t=2,p=1$FMwa6Eb1swp7PpDLXToHog$9hNgeoBrX2WeoG/amPwGI/ekSAMukXawbK54b/NyiFQ'
+    );
 INSERT INTO `tags` (`user_id`, `name`)
 VALUES (1, 'tag1'),
-    (1, 'tag2'),
-    (2, 'tag3');
+    (1, 'tag2');

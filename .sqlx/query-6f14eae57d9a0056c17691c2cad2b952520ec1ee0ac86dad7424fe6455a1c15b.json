@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT id, email, password, created_at FROM users;",
+  "query": "SELECT id, email, created_at FROM users WHERE email = ?",
   "describe": {
     "columns": [
       {
@@ -25,16 +25,6 @@
       },
       {
         "ordinal": 2,
-        "name": "password",
-        "type_info": {
-          "type": "String",
-          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
-          "char_set": 224,
-          "max_size": 388
-        }
-      },
-      {
-        "ordinal": 3,
         "name": "created_at",
         "type_info": {
           "type": "Datetime",
@@ -45,14 +35,13 @@
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 1
     },
     "nullable": [
-      false,
       false,
       false,
       false
     ]
   },
-  "hash": "7c703db54f7f7d2f8c03ff5cbb5ea04cf3b11aa9092cffc1209ef45d74bb7e68"
+  "hash": "6f14eae57d9a0056c17691c2cad2b952520ec1ee0ac86dad7424fe6455a1c15b"
 }

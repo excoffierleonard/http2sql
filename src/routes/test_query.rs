@@ -11,11 +11,11 @@ struct User {
     created_at: NaiveDateTime,
 }
 
-#[get("/v1/users")]
+#[get("/users")]
 async fn custom_query(pool: Data<DbPool>) -> Result<ApiResponse<Vec<User>>, ApiError> {
     let users = query_as!(User, "SELECT id, email, password, created_at FROM users;")
         .fetch_all(pool.get_pool())
         .await?;
 
-    Ok(ApiResponse::data(users))
+    Ok(ApiResponse::new(Some(users), None))
 }

@@ -13,6 +13,8 @@ pub enum ApiError {
     Database(sqlx::Error),
     InvalidInput(String),
     ConfigError(String),
+    HashError(argon2::password_hash::Error),
+    Unauthorized(String),
 }
 
 impl std::fmt::Display for ApiError {
@@ -21,6 +23,8 @@ impl std::fmt::Display for ApiError {
             Self::Database(e) => write!(f, "Database error: {}", e),
             Self::InvalidInput(e) => write!(f, "Invalid input: {}", e),
             Self::ConfigError(e) => write!(f, "Config error: {}", e),
+            Self::HashError(e) => write!(f, "Hash error: {}", e),
+            Self::Unauthorized(e) => write!(f, "Unauthorized: {}", e),
         }
     }
 }
@@ -33,6 +37,8 @@ impl ResponseError for ApiError {
             Self::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::InvalidInput(_) => StatusCode::BAD_REQUEST,
             Self::ConfigError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::HashError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::Unauthorized(_) => StatusCode::UNAUTHORIZED,
         }
     }
 
@@ -57,6 +63,12 @@ impl From<sqlx::Error> for ApiError {
     }
 }
 
+impl From<argon2::password_hash::Error> for ApiError {
+    fn from(err: argon2::password_hash::Error) -> Self {
+        ApiError::HashError(err)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -67,6 +79,8 @@ mod tests {
         let bad_request = ApiError::Database(sqlx::Error::RowNotFound);
         let internal_error = ApiError::InvalidInput("Wrong input".to_string());
         let config_error = ApiError::ConfigError("Missing environment variable".to_string());
+        let hash_error = ApiError::HashError(argon2::password_hash::Error::Algorithm);
+        let unauthorized = ApiError::Unauthorized("Unauthorized".to_string());
 
         assert_eq!(
             bad_request.to_string(),
@@ -77,6 +91,8 @@ mod tests {
             config_error.to_string(),
             "Config error: Missing environment variable"
         );
+        assert_eq!(hash_error.to_string(), "Hash error: unsupported algorithm");
+        assert_eq!(unauthorized.to_string(), "Unauthorized: Unauthorized");
     }
 
     #[test]
@@ -93,6 +109,14 @@ mod tests {
         assert_eq!(
             ApiError::ConfigError("Missing environment variable".to_string()).status_code(),
             StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            ApiError::HashError(argon2::password_hash::Error::Algorithm).status_code(),
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            ApiError::Unauthorized("Unauthorized".to_string()).status_code(),
+            StatusCode::UNAUTHORIZED
         );
     }
 }
