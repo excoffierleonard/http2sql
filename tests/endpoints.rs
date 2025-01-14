@@ -64,8 +64,8 @@ async fn register_user_success() {
 
     // Create request
     let request_body = RequestBody {
-        email: "john.doe@gmail.com".to_string(),
-        password: "Randompassword1!".to_string(),
+        email: "luke.warm@hotmail.fr".to_string(),
+        password: "Randompassword2!".to_string(),
     };
     let req = test::TestRequest::post()
         .uri("/v1/auth/register")
@@ -80,7 +80,7 @@ async fn register_user_success() {
 
     let response_body: ResponseBody = test::read_body_json(resp).await;
     assert_eq!(response_body.data.id, 2);
-    assert_eq!(response_body.data.email, "john.doe@gmail.com");
+    assert_eq!(response_body.data.email, "luke.warm@hotmail.fr");
     assert!(response_body.data.created_at.and_utc().timestamp() > 0);
     assert_eq!(
         response_body.message,
@@ -116,8 +116,8 @@ async fn login_user_success() {
 
     // Create request
     let request_body = RequestBody {
-        email: "luke.warm@hotmail.fr".to_string(),
-        password: "Randompassword2!".to_string(),
+        email: "john.doe@gmail.com".to_string(),
+        password: "Randompassword1!".to_string(),
     };
     let req = test::TestRequest::post()
         .uri("/v1/auth/login")
@@ -171,11 +171,8 @@ async fn read_users() {
 
     let body: ResponseBody = test::read_body_json(resp).await;
     let users = body.data;
-    assert_eq!(users.len(), 2);
+    assert_eq!(users.len(), 1);
     assert_eq!(users[0].id, 1);
     assert_eq!(users[0].email, "john.doe@gmail.com");
     assert_eq!(users[0].password.len(), 97);
-    assert_eq!(users[1].id, 2);
-    assert_eq!(users[1].email, "luke.warm@hotmail.fr");
-    assert_eq!(users[1].password.len(), 97);
 }
