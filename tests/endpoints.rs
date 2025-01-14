@@ -153,7 +153,7 @@ async fn read_users() {
     #[derive(Deserialize, Debug)]
     struct ResponseBody {
         data: Vec<ResponseUser>,
-        _message: Option<()>,
+        message: String,
     }
 
     // Setup
@@ -176,10 +176,15 @@ async fn read_users() {
     assert!(resp.status().is_success());
 
     let body: ResponseBody = test::read_body_json(resp).await;
-    println!("{:?}", body);
-
-    let users = body.data;
+    let message = body.message;
+    assert_eq!(message, "User metadata retrieved successfully");
+    let users: Vec<ResponseUser> = body.data;
     assert_eq!(users.len(), 1);
     assert_eq!(users[0].email, "john.doe@gmail.com");
     assert!(users[0].created_at.and_utc().timestamp() > 0);
+    assert_eq!(users[0].tags.len(), 2);
+    assert_eq!(users[0].tags[0].name, "tag1");
+    assert!(users[0].tags[0].created_at.and_utc().timestamp() > 0);
+    assert_eq!(users[0].tags[1].name, "tag2");
+    assert!(users[0].tags[1].created_at.and_utc().timestamp() > 0);
 }

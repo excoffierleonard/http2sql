@@ -46,7 +46,7 @@ async fn read_user_metadata(pool: Data<DbPool>) -> Result<ApiResponse<Vec<User>>
 }
 
 fn transform_rows_to_users(rows: Vec<UserRow>) -> Vec<User> {
-    let mut user_map: HashMap<String, User> = HashMap::new();
+    let mut user_map = HashMap::new();
 
     for row in rows {
         let user = user_map
