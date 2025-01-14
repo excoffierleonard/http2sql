@@ -23,7 +23,7 @@ INSERT INTO `users` (`email`, `password`)
 VALUES (
         'john.doe@gmail.com',
         '$argon2id$v=19$m=19456,t=2,p=1$FMwa6Eb1swp7PpDLXToHog$9hNgeoBrX2WeoG/amPwGI/ekSAMukXawbK54b/NyiFQ'
-    )
+    );
 INSERT INTO `tags` (`user_id`, `name`)
 VALUES (1, 'tag1'),
     (1, 'tag2');
