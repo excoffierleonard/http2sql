@@ -35,7 +35,4 @@ VALUES (
 INSERT INTO `tags` (`user_id`, `name`)
 VALUES (1, 'tag1'),
     (1, 'tag2'),
-    (2, 'tag3'),
-    (2, 'tag4'),
-    (3, 'tag5'),
-    (3, 'tag6');
+    (2, 'tag3');
