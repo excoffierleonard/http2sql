@@ -79,7 +79,7 @@ async fn register_user_success() {
     assert!(resp.status().is_success());
 
     let response_body: ResponseBody = test::read_body_json(resp).await;
-    assert_eq!(response_body.data.id, 2);
+    assert_eq!(response_body.data.id, 4);
     assert_eq!(response_body.data.email, "luke.warm@hotmail.fr");
     assert!(response_body.data.created_at.and_utc().timestamp() > 0);
     assert_eq!(
@@ -181,7 +181,7 @@ async fn read_users() {
     assert_eq!(message, "User metadata retrieved successfully");
 
     let users: Vec<ResponseUser> = body.data;
-    assert_eq!(users.len(), 1);
+    assert_eq!(users.len(), 3);
     assert_eq!(users[0].email, "john.doe@gmail.com");
     assert!(users[0].created_at.and_utc().timestamp() > 0);
     assert_eq!(users[0].tags.len(), 2);

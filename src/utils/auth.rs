@@ -78,6 +78,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn create_password() {
+        let password = Password::new("Randompassword4!")
+            .validate()
+            .unwrap()
+            .hash()
+            .unwrap();
+        println!("{:?}", password);
+    }
+
+    #[test]
     fn validate_password() {
         // Test empty password
         assert!(Password::new("").validate().is_err());

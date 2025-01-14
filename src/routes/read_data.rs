@@ -2,7 +2,7 @@ use crate::{db::DbPool, errors::ApiError, responses::ApiResponse};
 use actix_web::{get, web::Data, Result};
 use serde::Serialize;
 use sqlx::{query_as, types::chrono::NaiveDateTime};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 #[derive(Serialize, Debug)]
 struct User {
@@ -46,7 +46,7 @@ async fn read_user_metadata(pool: Data<DbPool>) -> Result<ApiResponse<Vec<User>>
 }
 
 fn transform_rows_to_users(rows: Vec<UserRow>) -> Vec<User> {
-    let mut user_map = HashMap::new();
+    let mut user_map = BTreeMap::new();
 
     for row in rows {
         let user = user_map
@@ -63,4 +63,50 @@ fn transform_rows_to_users(rows: Vec<UserRow>) -> Vec<User> {
     }
 
     user_map.into_values().collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{NaiveDate, NaiveTime};
+
+    // test the transformation
+    #[test]
+    fn test_transform_rows_to_users() {
+        let timestamp = NaiveDateTime::new(
+            NaiveDate::from_ymd_opt(2025, 1, 14).unwrap(),
+            NaiveTime::from_hms_opt(19, 8, 20).unwrap(),
+        );
+
+        let rows = vec![
+            UserRow {
+                user_email: "john.doe@gmail.com".to_string(),
+                user_created_at: timestamp,
+                tag_name: Some("tag1".to_string()),
+                tag_created_at: Some(timestamp),
+            },
+            UserRow {
+                user_email: "john.doe@gmail.com".to_string(),
+                user_created_at: timestamp,
+                tag_name: Some("tag2".to_string()),
+                tag_created_at: Some(timestamp),
+            },
+            UserRow {
+                user_email: "alice.smith@gmail.com".to_string(),
+                user_created_at: timestamp,
+                tag_name: Some("tag3".to_string()),
+                tag_created_at: Some(timestamp),
+            },
+            UserRow {
+                user_email: "alice.smith@gmail.com".to_string(),
+                user_created_at: timestamp,
+                tag_name: Some("tag4".to_string()),
+                tag_created_at: Some(timestamp),
+            },
+        ];
+
+        let users = transform_rows_to_users(rows);
+
+        println!("{:?}", users);
+    }
 }
