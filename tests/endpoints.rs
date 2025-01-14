@@ -111,7 +111,7 @@ async fn read_users() {
     .await;
 
     // Create request
-    let req = test::TestRequest::get().uri("/v1/users").to_request();
+    let req = test::TestRequest::get().uri("/users").to_request();
 
     // Get response
     let resp = test::call_service(&app, req).await;

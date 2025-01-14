@@ -2,21 +2,19 @@
 
 set -e
 
+# Fetch the user table
 curl --request GET \
      --url http://localhost:8080/v1/users
 
+
+# Register a new user
 curl --request POST \
-     --url 'http://localhost:8080/v1/users' \
+     --url 'http://localhost:8080/v1/auth/register' \
      --header 'Content-Type: application/json' \
      --data '{
-       "data": [
+       "data": 
          {
            "email": "john.doe@gmail.com",
-           "password": "randompassword1"
-         },
-         {
-           "email": "luke.warm@hotmail.fr", 
-           "password": "randompassword2"
+           "password": "Randompassword1!"
          }
-       ]
-     }'
+      }'
