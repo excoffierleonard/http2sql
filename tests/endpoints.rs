@@ -79,7 +79,7 @@ async fn register_user_success() {
     assert!(resp.status().is_success());
 
     let response_body: ResponseBody = test::read_body_json(resp).await;
-    assert_eq!(response_body.data.id, 2);
+    assert_eq!(response_body.data.id, 4);
     assert_eq!(response_body.data.email, "luke.warm@hotmail.fr");
     assert!(response_body.data.created_at.and_utc().timestamp() > 0);
     assert_eq!(
@@ -138,16 +138,22 @@ async fn login_user_success() {
 async fn read_users() {
     // Test-specific types
     #[derive(Deserialize, Debug)]
+    struct ResponseTag {
+        name: String,
+        created_at: NaiveDateTime,
+    }
+
+    #[derive(Deserialize, Debug)]
     struct ResponseUser {
-        id: i32,
         email: String,
-        password: String,
+        created_at: NaiveDateTime,
+        tags: Vec<ResponseTag>,
     }
 
     #[derive(Deserialize, Debug)]
     struct ResponseBody {
         data: Vec<ResponseUser>,
-        _message: Option<()>,
+        message: String,
     }
 
     // Setup
@@ -156,7 +162,7 @@ async fn read_users() {
     let app = test::init_service(
         App::new()
             .app_data(Data::new(pool))
-            .service(scope("/v1").service(routes::custom_query)),
+            .service(scope("/v1").service(routes::read_user_metadata)),
     )
     .await;
 
@@ -170,9 +176,17 @@ async fn read_users() {
     assert!(resp.status().is_success());
 
     let body: ResponseBody = test::read_body_json(resp).await;
-    let users = body.data;
-    assert_eq!(users.len(), 1);
-    assert_eq!(users[0].id, 1);
+
+    let message = body.message;
+    assert_eq!(message, "User metadata retrieved successfully");
+
+    let users: Vec<ResponseUser> = body.data;
+    assert_eq!(users.len(), 3);
     assert_eq!(users[0].email, "john.doe@gmail.com");
-    assert_eq!(users[0].password.len(), 97);
+    assert!(users[0].created_at.and_utc().timestamp() > 0);
+    assert_eq!(users[0].tags.len(), 2);
+    assert_eq!(users[0].tags[0].name, "tag1");
+    assert!(users[0].tags[0].created_at.and_utc().timestamp() > 0);
+    assert_eq!(users[0].tags[1].name, "tag2");
+    assert!(users[0].tags[1].created_at.and_utc().timestamp() > 0);
 }

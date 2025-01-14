@@ -3,31 +3,56 @@
 ## Table of Contents
 
 - [Endpoints](#endpoints)
-  - [Create a new user](#create-a-new-user)
+  - [Register a new user](#register-a-new-user)
+  - [Authenticate a user](#authenticate-a-user)
   - [Read all users](#read-all-users)
 
 ## Endpoints
 
-### Create a new user
+### Register a new user
 
 ```http
-POST /v1/users
+POST /v1/auth/register
 ```
 
 #### Request Body
 
 ```json
 {
-    "data": [
-        {
-            "email": "john.doe@gmail.com",
-            "password": "randompassword1"
-        },
-        {
-            "email": "luke.warm@hotmail.fr",
-            "password": "randompassword2"
-        }
-    ]
+    {
+        "email": "luke.warm@hotmail.fr",
+        "password": "Randompassword2!"
+    }
+}
+```
+
+#### Response Body
+
+```json
+{
+    "data": {
+        "id": 2,
+        "email": "luke.warm@hotmail.fr",
+        "created_at": "2025-01-14T14:36:06"
+    },
+    "message": "User registered successfully"
+}
+```
+
+### Authenticate a user
+
+```http
+POST /v1/auth/login
+```
+
+#### Request Body
+
+```json
+{
+    {
+        "email": "luke.warm@hotmail.fr",
+        "password": "Randompassword2!"
+    }
 }
 ```
 
@@ -36,8 +61,7 @@ POST /v1/users
 ```json
 {
     "data": null,
-    "message": "Users created successfully",
-    "affected_rows": 2
+    "message": "Correct password"
 }
 ```
 
@@ -57,19 +81,20 @@ GET /v1/users
 {
     "data": [
         {
-            "id": 1,
             "email": "john.doe@gmail.com",
-            "password": "randompassword1",
-            "created_at": "2025-01-13T05:03:01"
-        },
-        {
-            "id": 2,
-            "email": "luke.warm@hotmail.fr",
-            "password": "randompassword2",
-            "created_at": "2025-01-13T05:03:01"
+            "created_at": "2025-01-14T16:22:32",
+            "tags": [
+                {
+                    "name": "tag1",
+                    "created_at": "2025-01-14T16:22:32"
+                },
+                {
+                    "name": "tag2",
+                    "created_at": "2025-01-14T16:22:32"
+                }
+            ]
         }
     ],
-    "message": null,
-    "affected_rows": null
+    "message": "User metadata retrieved successfully"
 }
 ```

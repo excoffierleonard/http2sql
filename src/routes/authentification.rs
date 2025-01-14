@@ -1,4 +1,4 @@
-use crate::{auth::Password, db::DbPool, errors::ApiError, responses::ApiResponse};
+use crate::{db::DbPool, errors::ApiError, responses::ApiResponse, utils::auth::Password};
 use actix_web::{
     post,
     web::{Data, Json},
@@ -76,6 +76,7 @@ async fn login_user(
         .validate()?
         .verify(&db_password.password)?
     {
+        // TODO: Add handling for correct login
         true => Ok(ApiResponse::new(None, Some("Correct password".to_string()))),
         false => Err(ApiError::Unauthorized("Invalid password".to_string())),
     }
