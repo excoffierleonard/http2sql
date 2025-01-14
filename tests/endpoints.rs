@@ -34,8 +34,8 @@ async fn create_users() {
     }
 
     #[derive(Serialize, Debug)]
-    struct RequestUsers {
-        data: Vec<RequestUser>,
+    struct Request {
+        data: RequestUser,
     }
 
     // Test-specific response type
@@ -52,25 +52,19 @@ async fn create_users() {
     let app = test::init_service(
         App::new()
             .app_data(Data::new(pool))
-            .service(routes::create_users),
+            .service(routes::register_user),
     )
     .await;
 
     // Create request
-    let request_body = RequestUsers {
-        data: vec![
-            RequestUser {
-                email: "john.doe@gmail.com".to_string(),
-                password: "randompassword1".to_string(),
-            },
-            RequestUser {
-                email: "luke.warm@hotmail.fr".to_string(),
-                password: "randompassword2".to_string(),
-            },
-        ],
+    let request_body = Request {
+        data: RequestUser {
+            email: "john.doe@gmail.com".to_string(),
+            password: "Randompassword1!".to_string(),
+        },
     };
     let req = test::TestRequest::post()
-        .uri("/v1/users")
+        .uri("/auth/register")
         .set_json(&request_body)
         .to_request();
 
@@ -78,14 +72,13 @@ async fn create_users() {
     let resp = test::call_service(&app, req).await;
 
     // Assert the results
-    let status = resp.status();
-    assert!(status.is_success());
+    assert!(resp.status().is_success());
 
     let response_body: Response = test::read_body_json(resp).await;
-    assert_eq!(response_body.affected_rows, Some(2));
+    assert_eq!(response_body.affected_rows, Some(1));
     assert_eq!(
         response_body.message,
-        Some("Users created successfully".to_string())
+        Some("User registered successfully".to_string())
     );
     assert_eq!(response_body.data, None);
 }
@@ -124,16 +117,15 @@ async fn read_users() {
     let resp = test::call_service(&app, req).await;
 
     // Assert the results
-    let status = resp.status();
-    assert!(status.is_success());
+    assert!(resp.status().is_success());
 
     let body: Response = test::read_body_json(resp).await;
     let users = body.data.unwrap();
     assert_eq!(users.len(), 2);
     assert_eq!(users[0].id, 1);
     assert_eq!(users[0].email, "john.doe@gmail.com");
-    assert_eq!(users[0].password, "randompassword1");
+    assert_eq!(users[0].password.len(), 97);
     assert_eq!(users[1].id, 2);
     assert_eq!(users[1].email, "luke.warm@hotmail.fr");
-    assert_eq!(users[1].password, "randompassword2");
+    assert_eq!(users[1].password.len(), 97);
 }

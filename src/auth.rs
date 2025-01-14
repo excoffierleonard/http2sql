@@ -12,11 +12,11 @@ impl Password {
         Self(password.into())
     }
 
-    pub fn validate(&self) -> Result<(), ApiError> {
+    pub fn validate(&self) -> Result<&Self, ApiError> {
         let validations = [
             (self.0.is_empty(), "Password cannot be empty"),
             (
-                !self.0.chars().all(|c| c.is_ascii()),
+                !self.0.is_ascii(),
                 "Password must contain only ASCII characters",
             ),
             (
@@ -51,7 +51,7 @@ impl Password {
             }
         }
 
-        Ok(())
+        Ok(self)
     }
 
     pub fn hash(&self) -> Result<String, ApiError> {
@@ -76,6 +76,13 @@ impl Password {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn create_password() {
+        let password = Password::new("Randompassword2!").hash().unwrap();
+
+        println!("{:?}", password);
+    }
 
     #[test]
     fn validate_password() {

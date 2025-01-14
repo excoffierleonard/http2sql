@@ -27,10 +27,10 @@
         "ordinal": 2,
         "name": "password",
         "type_info": {
-          "type": "VarString",
+          "type": "String",
           "flags": "NOT_NULL | NO_DEFAULT_VALUE",
           "char_set": 224,
-          "max_size": 1020
+          "max_size": 388
         }
       },
       {
