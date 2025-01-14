@@ -141,7 +141,7 @@ async fn read_users() {
     struct ResponseUser {
         id: i32,
         email: String,
-        password: String,
+        created_at: NaiveDateTime,
     }
 
     #[derive(Deserialize, Debug)]
@@ -174,5 +174,5 @@ async fn read_users() {
     assert_eq!(users.len(), 1);
     assert_eq!(users[0].id, 1);
     assert_eq!(users[0].email, "john.doe@gmail.com");
-    assert_eq!(users[0].password.len(), 97);
+    assert!(users[0].created_at.and_utc().timestamp() > 0);
 }
