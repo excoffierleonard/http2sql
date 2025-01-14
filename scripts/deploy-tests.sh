@@ -2,11 +2,6 @@
 
 set -e
 
-# Fetch the user table
-curl --request GET \
-     --url http://localhost:8080/v1/users
-
-
 # Register a new user
 curl --request POST \
      --url 'http://localhost:8080/v1/auth/register' \
@@ -30,3 +25,7 @@ curl --request POST \
            "password": "Randompassword1!"
          }
       }'
+
+# Fetch the user table
+curl --request GET \
+     --url http://localhost:8080/v1/users
