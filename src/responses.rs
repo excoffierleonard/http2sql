@@ -25,7 +25,7 @@ impl<T> ApiResponse<T> {
         }
     }
 
-    pub fn _message(message: impl Into<String>) -> Self {
+    pub fn message(message: impl Into<String>) -> Self {
         Self {
             data: None,
             message: Some(message.into()),

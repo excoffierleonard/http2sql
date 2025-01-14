@@ -2,7 +2,7 @@ use crate::{
     auth::Password, db::DbPool, errors::ApiError, requests::ApiRequest, responses::ApiResponse,
 };
 use actix_web::{
-    get, post,
+    post,
     web::{Data, Json},
     Result,
 };
@@ -20,8 +20,8 @@ struct DbPassword {
     password: String,
 }
 
-#[get("/auth/token")]
-async fn create_token(
+#[post("/auth/login")]
+async fn login_user(
     pool: Data<DbPool>,
     request_body: Json<ApiRequest<RequestBody>>,
 ) -> Result<ApiResponse<String>, ApiError> {
@@ -37,13 +37,9 @@ async fn create_token(
         .validate()?
         .verify(&db_password.password)?
     {
-        true => (),
-        false => return Err(ApiError::Unauthorized("Invalid password".to_string())),
+        true => Ok(ApiResponse::message("Correct password".to_string())),
+        false => Err(ApiError::Unauthorized("Invalid password".to_string())),
     }
-
-    let token = "temporary_token".to_string();
-
-    Ok(ApiResponse::data(token))
 }
 
 #[post("/auth/register")]

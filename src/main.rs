@@ -24,8 +24,9 @@ async fn main() -> Result<()> {
             .app_data(Data::new(pool.clone()))
             .service(
                 scope("/v1")
-                    .service(routes::custom_query)
-                    .service(routes::register_user),
+                    .service(routes::register_user)
+                    .service(routes::login_user)
+                    .service(routes::custom_query),
             )
     })
     .bind(format!("0.0.0.0:{}", config.server_port))?

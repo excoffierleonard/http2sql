@@ -1,4 +1,8 @@
-use actix_web::{test, web::Data, App};
+use actix_web::{
+    test,
+    web::{scope, Data},
+    App,
+};
 use http2sql::{db::DbPool, routes};
 use serde::{Deserialize, Serialize};
 use testcontainers_modules::{
@@ -25,7 +29,7 @@ async fn setup_container() -> (String, ContainerAsync<Mariadb>) {
 }
 
 #[actix_web::test]
-async fn create_users() {
+async fn register_user_success() {
     // Test-specific request types
     #[derive(Serialize, Debug)]
     struct RequestUser {
@@ -52,7 +56,7 @@ async fn create_users() {
     let app = test::init_service(
         App::new()
             .app_data(Data::new(pool))
-            .service(routes::register_user),
+            .service(scope("/v1").service(routes::register_user)),
     )
     .await;
 
@@ -64,7 +68,7 @@ async fn create_users() {
         },
     };
     let req = test::TestRequest::post()
-        .uri("/auth/register")
+        .uri("/v1/auth/register")
         .set_json(&request_body)
         .to_request();
 
@@ -80,6 +84,62 @@ async fn create_users() {
         response_body.message,
         Some("User registered successfully".to_string())
     );
+    assert_eq!(response_body.data, None);
+}
+
+#[actix_web::test]
+async fn login_user_success() {
+    // Test-specific request types
+    #[derive(Serialize, Debug)]
+    struct RequestUser {
+        email: String,
+        password: String,
+    }
+
+    #[derive(Serialize, Debug)]
+    struct Request {
+        data: RequestUser,
+    }
+
+    // Test-specific response type
+    #[derive(Deserialize, Debug)]
+    struct Response {
+        data: Option<()>,
+        message: Option<String>,
+        affected_rows: Option<u64>,
+    }
+
+    // Setup
+    let (database_url, _container) = setup_container().await;
+    let pool = DbPool::new(database_url).await.unwrap();
+    let app = test::init_service(
+        App::new()
+            .app_data(Data::new(pool))
+            .service(scope("/v1").service(routes::login_user)),
+    )
+    .await;
+
+    // Create request
+    let request_body = Request {
+        data: RequestUser {
+            email: "john.doe@gmail.com".to_string(),
+            password: "Randompassword1!".to_string(),
+        },
+    };
+    let req = test::TestRequest::post()
+        .uri("/v1/auth/login")
+        .set_json(&request_body)
+        .to_request();
+
+    // Get response
+    let resp = test::call_service(&app, req).await;
+
+    // Assert the results
+    assert!(resp.status().is_success());
+
+    let response_body: Response = test::read_body_json(resp).await;
+    assert_eq!(response_body.affected_rows, Some(0));
+    assert_eq!(response_body.message, Some("Correct password".to_string()));
     assert_eq!(response_body.data, None);
 }
 
@@ -106,12 +166,12 @@ async fn read_users() {
     let app = test::init_service(
         App::new()
             .app_data(Data::new(pool))
-            .service(routes::custom_query),
+            .service(scope("/v1").service(routes::custom_query)),
     )
     .await;
 
     // Create request
-    let req = test::TestRequest::get().uri("/users").to_request();
+    let req = test::TestRequest::get().uri("/v1/users").to_request();
 
     // Get response
     let resp = test::call_service(&app, req).await;
