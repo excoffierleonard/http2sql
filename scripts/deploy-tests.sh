@@ -7,8 +7,8 @@ curl --request POST \
      --url 'http://localhost:8080/v1/auth/register' \
      --header 'Content-Type: application/json' \
      --data '{
-           "email": "john.doe@gmail.com",
-           "password": "Randompassword1!"
+           "email": "luke.warm@hotmail.fr",
+           "password": "Randompassword2!"
       }'
 
 # Login the user
@@ -16,8 +16,8 @@ curl --request POST \
      --url 'http://localhost:8080/v1/auth/login' \
      --header 'Content-Type: application/json' \
      --data '{
-           "email": "john.doe@gmail.com",
-           "password": "Randompassword1!"
+           "email": "luke.warm@hotmail.fr",
+           "password": "Randompassword2!"
       }'
 
 # Fetch the user table

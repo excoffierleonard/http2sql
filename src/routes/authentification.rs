@@ -14,36 +14,6 @@ struct Credentials {
 }
 
 #[derive(Serialize, Debug)]
-struct DbPassword {
-    password: String,
-}
-
-#[post("/auth/login")]
-async fn login_user(
-    pool: Data<DbPool>,
-    request_body: Json<Credentials>,
-) -> Result<ApiResponse<()>, ApiError> {
-    let db_password = query_as!(
-        DbPassword,
-        "
-        SELECT password 
-        FROM users WHERE email = ?
-        ",
-        &request_body.email
-    )
-    .fetch_one(pool.get_pool())
-    .await?;
-
-    match Password::new(&request_body.password)
-        .validate()?
-        .verify(&db_password.password)?
-    {
-        true => Ok(ApiResponse::new(None, Some("Correct password".to_string()))),
-        false => Err(ApiError::Unauthorized("Invalid password".to_string())),
-    }
-}
-
-#[derive(Serialize, Debug)]
 struct Metadata {
     id: i32,
     email: String,
@@ -79,4 +49,34 @@ async fn register_user(
         Some(user_metadata),
         Some("User registered successfully".to_string()),
     ))
+}
+
+#[derive(Serialize, Debug)]
+struct DbPassword {
+    password: String,
+}
+
+#[post("/auth/login")]
+async fn login_user(
+    pool: Data<DbPool>,
+    request_body: Json<Credentials>,
+) -> Result<ApiResponse<()>, ApiError> {
+    let db_password = query_as!(
+        DbPassword,
+        "
+        SELECT password 
+        FROM users WHERE email = ?
+        ",
+        &request_body.email
+    )
+    .fetch_one(pool.get_pool())
+    .await?;
+
+    match Password::new(&request_body.password)
+        .validate()?
+        .verify(&db_password.password)?
+    {
+        true => Ok(ApiResponse::new(None, Some("Correct password".to_string()))),
+        false => Err(ApiError::Unauthorized("Invalid password".to_string())),
+    }
 }

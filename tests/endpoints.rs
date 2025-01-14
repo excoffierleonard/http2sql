@@ -3,6 +3,7 @@ use actix_web::{
     web::{scope, Data},
     App,
 };
+use chrono::NaiveDateTime;
 use http2sql::{db::DbPool, routes};
 use serde::{Deserialize, Serialize};
 use testcontainers_modules::{
@@ -37,12 +38,18 @@ async fn register_user_success() {
         password: String,
     }
 
+    #[derive(Deserialize, Debug)]
+    struct ResponseData {
+        id: i32,
+        email: String,
+        created_at: NaiveDateTime,
+    }
+
     // Test-specific response type
     #[derive(Deserialize, Debug)]
     struct ResponseBody {
-        data: Option<()>,
-        message: Option<String>,
-        affected_rows: Option<u64>,
+        data: ResponseData,
+        message: String,
     }
 
     // Setup
@@ -72,12 +79,13 @@ async fn register_user_success() {
     assert!(resp.status().is_success());
 
     let response_body: ResponseBody = test::read_body_json(resp).await;
-    assert_eq!(response_body.affected_rows, Some(1));
+    assert_eq!(response_body.data.id, 2);
+    assert_eq!(response_body.data.email, "john.doe@gmail.com");
+    assert!(response_body.data.created_at.and_utc().timestamp() > 0);
     assert_eq!(
         response_body.message,
-        Some("User registered successfully".to_string())
+        "User registered successfully".to_string()
     );
-    assert_eq!(response_body.data, None);
 }
 
 #[actix_web::test]
@@ -92,9 +100,8 @@ async fn login_user_success() {
     // Test-specific response type
     #[derive(Deserialize, Debug)]
     struct ResponseBody {
-        data: Option<()>,
-        message: Option<String>,
-        affected_rows: Option<u64>,
+        _data: Option<()>,
+        message: String,
     }
 
     // Setup
@@ -109,8 +116,8 @@ async fn login_user_success() {
 
     // Create request
     let request_body = RequestBody {
-        email: "john.doe@gmail.com".to_string(),
-        password: "Randompassword1!".to_string(),
+        email: "luke.warm@hotmail.fr".to_string(),
+        password: "Randompassword2!".to_string(),
     };
     let req = test::TestRequest::post()
         .uri("/v1/auth/login")
@@ -124,9 +131,7 @@ async fn login_user_success() {
     assert!(resp.status().is_success());
 
     let response_body: ResponseBody = test::read_body_json(resp).await;
-    assert_eq!(response_body.affected_rows, Some(0));
-    assert_eq!(response_body.message, Some("Correct password".to_string()));
-    assert_eq!(response_body.data, None);
+    assert_eq!(response_body.message, "Correct password");
 }
 
 #[actix_web::test]
@@ -141,9 +146,8 @@ async fn read_users() {
 
     #[derive(Deserialize, Debug)]
     struct ResponseBody {
-        data: Option<Vec<ResponseUser>>,
-        _message: Option<String>,
-        _affected_rows: Option<u64>,
+        data: Vec<ResponseUser>,
+        _message: Option<()>,
     }
 
     // Setup
@@ -166,7 +170,7 @@ async fn read_users() {
     assert!(resp.status().is_success());
 
     let body: ResponseBody = test::read_body_json(resp).await;
-    let users = body.data.unwrap();
+    let users = body.data;
     assert_eq!(users.len(), 2);
     assert_eq!(users[0].id, 1);
     assert_eq!(users[0].email, "john.doe@gmail.com");
