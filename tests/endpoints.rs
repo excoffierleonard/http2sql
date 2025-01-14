@@ -138,10 +138,16 @@ async fn login_user_success() {
 async fn read_users() {
     // Test-specific types
     #[derive(Deserialize, Debug)]
+    struct ResponseTag {
+        name: String,
+        created_at: NaiveDateTime,
+    }
+
+    #[derive(Deserialize, Debug)]
     struct ResponseUser {
-        id: i32,
         email: String,
         created_at: NaiveDateTime,
+        tags: Vec<ResponseTag>,
     }
 
     #[derive(Deserialize, Debug)]
@@ -156,7 +162,7 @@ async fn read_users() {
     let app = test::init_service(
         App::new()
             .app_data(Data::new(pool))
-            .service(scope("/v1").service(routes::custom_query)),
+            .service(scope("/v1").service(routes::read_user_metadata)),
     )
     .await;
 
@@ -170,9 +176,10 @@ async fn read_users() {
     assert!(resp.status().is_success());
 
     let body: ResponseBody = test::read_body_json(resp).await;
+    println!("{:?}", body);
+
     let users = body.data;
     assert_eq!(users.len(), 1);
-    assert_eq!(users[0].id, 1);
     assert_eq!(users[0].email, "john.doe@gmail.com");
     assert!(users[0].created_at.and_utc().timestamp() > 0);
 }

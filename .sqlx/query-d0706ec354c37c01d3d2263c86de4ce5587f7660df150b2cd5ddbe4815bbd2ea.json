@@ -1,0 +1,58 @@
+{
+  "db_name": "MySQL",
+  "query": "\n        SELECT u.email as user_email, u.created_at as user_created_at, t.name as tag_name, t.created_at as tag_created_at \n        FROM users u \n        LEFT JOIN tags t \n        ON u.id = t.user_id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_email",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "user_created_at",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "NOT_NULL | BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tag_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "tag_created_at",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "d0706ec354c37c01d3d2263c86de4ce5587f7660df150b2cd5ddbe4815bbd2ea"
+}
