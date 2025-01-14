@@ -32,19 +32,14 @@ async fn setup_container() -> (String, ContainerAsync<Mariadb>) {
 async fn register_user_success() {
     // Test-specific request types
     #[derive(Serialize, Debug)]
-    struct RequestUser {
+    struct RequestBody {
         email: String,
         password: String,
     }
 
-    #[derive(Serialize, Debug)]
-    struct Request {
-        data: RequestUser,
-    }
-
     // Test-specific response type
     #[derive(Deserialize, Debug)]
-    struct Response {
+    struct ResponseBody {
         data: Option<()>,
         message: Option<String>,
         affected_rows: Option<u64>,
@@ -61,11 +56,9 @@ async fn register_user_success() {
     .await;
 
     // Create request
-    let request_body = Request {
-        data: RequestUser {
-            email: "john.doe@gmail.com".to_string(),
-            password: "Randompassword1!".to_string(),
-        },
+    let request_body = RequestBody {
+        email: "john.doe@gmail.com".to_string(),
+        password: "Randompassword1!".to_string(),
     };
     let req = test::TestRequest::post()
         .uri("/v1/auth/register")
@@ -78,7 +71,7 @@ async fn register_user_success() {
     // Assert the results
     assert!(resp.status().is_success());
 
-    let response_body: Response = test::read_body_json(resp).await;
+    let response_body: ResponseBody = test::read_body_json(resp).await;
     assert_eq!(response_body.affected_rows, Some(1));
     assert_eq!(
         response_body.message,
@@ -91,19 +84,14 @@ async fn register_user_success() {
 async fn login_user_success() {
     // Test-specific request types
     #[derive(Serialize, Debug)]
-    struct RequestUser {
+    struct RequestBody {
         email: String,
         password: String,
     }
 
-    #[derive(Serialize, Debug)]
-    struct Request {
-        data: RequestUser,
-    }
-
     // Test-specific response type
     #[derive(Deserialize, Debug)]
-    struct Response {
+    struct ResponseBody {
         data: Option<()>,
         message: Option<String>,
         affected_rows: Option<u64>,
@@ -120,11 +108,9 @@ async fn login_user_success() {
     .await;
 
     // Create request
-    let request_body = Request {
-        data: RequestUser {
-            email: "john.doe@gmail.com".to_string(),
-            password: "Randompassword1!".to_string(),
-        },
+    let request_body = RequestBody {
+        email: "john.doe@gmail.com".to_string(),
+        password: "Randompassword1!".to_string(),
     };
     let req = test::TestRequest::post()
         .uri("/v1/auth/login")
@@ -137,7 +123,7 @@ async fn login_user_success() {
     // Assert the results
     assert!(resp.status().is_success());
 
-    let response_body: Response = test::read_body_json(resp).await;
+    let response_body: ResponseBody = test::read_body_json(resp).await;
     assert_eq!(response_body.affected_rows, Some(0));
     assert_eq!(response_body.message, Some("Correct password".to_string()));
     assert_eq!(response_body.data, None);
@@ -154,7 +140,7 @@ async fn read_users() {
     }
 
     #[derive(Deserialize, Debug)]
-    struct Response {
+    struct ResponseBody {
         data: Option<Vec<ResponseUser>>,
         _message: Option<String>,
         _affected_rows: Option<u64>,
@@ -179,7 +165,7 @@ async fn read_users() {
     // Assert the results
     assert!(resp.status().is_success());
 
-    let body: Response = test::read_body_json(resp).await;
+    let body: ResponseBody = test::read_body_json(resp).await;
     let users = body.data.unwrap();
     assert_eq!(users.len(), 2);
     assert_eq!(users[0].id, 1);

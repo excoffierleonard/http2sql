@@ -17,5 +17,5 @@ async fn custom_query(pool: Data<DbPool>) -> Result<ApiResponse<Vec<User>>, ApiE
         .fetch_all(pool.get_pool())
         .await?;
 
-    Ok(ApiResponse::data(users))
+    Ok(ApiResponse::new(Some(users), None))
 }
