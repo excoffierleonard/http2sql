@@ -23,3 +23,12 @@ curl --request POST \
 # Fetch the user table
 curl --request GET \
      --url http://localhost:8080/v1/users
+
+# Create a tag
+curl --request POST \
+     --url 'http://localhost:8080/v1/tags' \
+     --header 'Content-Type: application/json' \
+     --data '{
+           "user_id": 3,
+           "name": "tag3"
+      }'

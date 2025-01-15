@@ -190,3 +190,64 @@ async fn read_users() {
     assert_eq!(users[0].tags[1].name, "tag2");
     assert!(users[0].tags[1].created_at.and_utc().timestamp() > 0);
 }
+
+#[actix_web::test]
+async fn create_tags() {
+    // Test-specific types
+    #[derive(Serialize, Debug)]
+    struct RequestBody {
+        user_id: i32,
+        name: String,
+    }
+
+    #[derive(Deserialize, Debug)]
+    struct ResponseData {
+        id: i32,
+        user_id: i32,
+        name: String,
+        created_at: NaiveDateTime,
+    }
+
+    #[derive(Deserialize, Debug)]
+    struct ResponseBody {
+        data: ResponseData,
+        message: String,
+    }
+
+    // Setup
+    let (database_url, _container) = setup_container().await;
+    let pool = DbPool::new(database_url).await.unwrap();
+    let app = test::init_service(
+        App::new()
+            .app_data(Data::new(pool))
+            .service(scope("/v1").service(routes::create_tags)),
+    )
+    .await;
+
+    // Create request
+    let request_body = RequestBody {
+        user_id: 1,
+        name: "tag4".to_string(),
+    };
+    let req = test::TestRequest::post()
+        .uri("/v1/tags")
+        .set_json(&request_body)
+        .to_request();
+
+    // Get response
+    let resp = test::call_service(&app, req).await;
+
+    // Assert the results
+    assert!(resp.status().is_success());
+
+    let body: ResponseBody = test::read_body_json(resp).await;
+
+    let message = body.message;
+    assert_eq!(message, "Tag created successfully");
+
+    let data = body.data;
+    assert_eq!(data.id, 4);
+    assert_eq!(data.user_id, 1);
+    assert_eq!(data.name, "tag4");
+    assert!(data.created_at.and_utc().timestamp() > 0);
+}

@@ -98,3 +98,32 @@ GET /v1/users
     "message": "User metadata retrieved successfully"
 }
 ```
+
+### Create a tag
+
+```http
+POST /v1/tags
+```
+
+#### Request Body
+
+```json
+{
+    "user_id": 3,
+    "name": "tag3"
+}
+```
+
+#### Response Body
+
+```json
+{
+    "data": {
+        "id": 4,
+        "user_id": 3,
+        "name": "tag3",
+        "created_at": "2025-01-15T04:59:24"
+    },
+    "message": "Tag created successfully"
+}
+```
