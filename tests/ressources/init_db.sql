@@ -15,6 +15,7 @@ CREATE TABLE tags (
     `user_id` INT NOT NULL,
     `name` VARCHAR(255) NOT NULL,
     `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (`user_id`, `name`),
     PRIMARY KEY (`id`),
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
 );

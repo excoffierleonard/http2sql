@@ -26,7 +26,8 @@ async fn main() -> Result<()> {
                 scope("/v1")
                     .service(routes::register_user)
                     .service(routes::login_user)
-                    .service(routes::read_user_metadata),
+                    .service(routes::read_user_metadata)
+                    .service(routes::create_tags),
             )
     })
     .bind(format!("0.0.0.0:{}", config.server_port))?
