@@ -1,26 +1,26 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT id, user_id, name, created_at \n        FROM tags WHERE user_id = ? \n        AND name = ? \n        ORDER BY created_at DESC LIMIT 1",
+  "query": "SELECT uuid, user_uuid, name, created_at \n        FROM tags WHERE uuid = ?\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
+        "name": "uuid",
         "type_info": {
-          "type": "Long",
-          "flags": "NOT_NULL | PRIMARY_KEY | AUTO_INCREMENT",
-          "char_set": 63,
-          "max_size": 11
+          "type": "String",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 144
         }
       },
       {
         "ordinal": 1,
-        "name": "user_id",
+        "name": "user_uuid",
         "type_info": {
-          "type": "Long",
+          "type": "String",
           "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
-          "char_set": 63,
-          "max_size": 11
+          "char_set": 224,
+          "max_size": 144
         }
       },
       {
@@ -45,7 +45,7 @@
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 1
     },
     "nullable": [
       false,
@@ -54,5 +54,5 @@
       false
     ]
   },
-  "hash": "06d2ab52a46a0b9a429ee41fdaff051b4241a174c394b30fa866b22f3a8d6f42"
+  "hash": "0d3ce3d0abf512012af570d3795b9f0e6c82db5aba529d6a5bc775599dc7147b"
 }

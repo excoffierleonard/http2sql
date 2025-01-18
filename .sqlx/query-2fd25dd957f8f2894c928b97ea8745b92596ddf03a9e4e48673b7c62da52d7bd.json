@@ -1,16 +1,16 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT id, email, created_at FROM users WHERE email = ?",
+  "query": "SELECT uuid, email, created_at FROM users WHERE uuid = ?",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
+        "name": "uuid",
         "type_info": {
-          "type": "Long",
-          "flags": "NOT_NULL | PRIMARY_KEY | AUTO_INCREMENT",
-          "char_set": 63,
-          "max_size": 11
+          "type": "String",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 144
         }
       },
       {
@@ -43,5 +43,5 @@
       false
     ]
   },
-  "hash": "6f14eae57d9a0056c17691c2cad2b952520ec1ee0ac86dad7424fe6455a1c15b"
+  "hash": "2fd25dd957f8f2894c928b97ea8745b92596ddf03a9e4e48673b7c62da52d7bd"
 }
