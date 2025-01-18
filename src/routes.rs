@@ -1,8 +1,13 @@
+use actix_web::web::ServiceConfig;
+
 mod authentification;
 mod create_data;
 mod read_data;
 
-pub use authentification::login_user;
-pub use authentification::register_user;
-pub use create_data::create_tags;
-pub use read_data::read_user_metadata;
+// Function to configure all routes
+pub fn v1_routes(cfg: &mut ServiceConfig) {
+    cfg.service(authentification::register_user)
+        .service(authentification::login_user)
+        .service(read_data::read_user_metadata)
+        .service(create_data::create_tags);
+}
