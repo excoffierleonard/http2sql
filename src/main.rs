@@ -4,7 +4,7 @@ use actix_web::{
     App, HttpServer,
 };
 use env_logger::{init_from_env, Env};
-use http2sql::{config::Config, db::DbPool, routes};
+use http2sql::{config::Config, db::DbPool, routes::v1_routes};
 use std::io::{Error, ErrorKind, Result};
 
 #[actix_web::main]
@@ -22,13 +22,7 @@ async fn main() -> Result<()> {
             .wrap(Logger::default())
             .wrap(Compress::default())
             .app_data(Data::new(pool.clone()))
-            .service(
-                scope("/v1")
-                    .service(routes::register_user)
-                    .service(routes::login_user)
-                    .service(routes::read_user_metadata)
-                    .service(routes::create_tags),
-            )
+            .service(scope("/v1").configure(v1_routes))
     })
     .bind(format!("0.0.0.0:{}", config.server_port))?
     .workers(config.workers)
