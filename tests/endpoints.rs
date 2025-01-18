@@ -84,7 +84,7 @@ async fn register_user_success() {
 
     #[derive(Deserialize, Debug)]
     struct RegisterResponse {
-        id: i32,
+        uuid: String,
         email: String,
         created_at: NaiveDateTime,
     }
@@ -106,7 +106,7 @@ async fn register_user_success() {
 
     let response_body: test_types::ResponseData<RegisterResponse> =
         test::read_body_json(resp).await;
-    assert_eq!(response_body.data.id, 4);
+    assert_eq!(response_body.data.uuid.len(), 36);
     assert_eq!(response_body.data.email, "luke.warm@hotmail.fr");
     assert!(response_body.data.created_at.and_utc().timestamp() > 0);
     assert_eq!(response_body.message, "User registered successfully");
@@ -153,7 +153,7 @@ async fn read_users() {
 
     let users = body.data;
     assert_eq!(users.len(), 3);
-    assert_eq!(users[0].email, "john.doe@gmail.com");
+    assert_eq!(users[0].email, "alice.smith@gmail.com");
     assert!(users[0].created_at.and_utc().timestamp() > 0);
     assert_eq!(users[0].tags.len(), 2);
     assert_eq!(users[0].tags[0].name, "tag1");
@@ -166,14 +166,14 @@ async fn read_users() {
 async fn create_tags() {
     #[derive(Serialize, Debug)]
     struct RequestBody {
-        user_id: i32,
+        user_uuid: String,
         name: String,
     }
 
     #[derive(Deserialize, Debug)]
     struct TagResponse {
-        id: i32,
-        user_id: i32,
+        uuid: String,
+        user_uuid: String,
         name: String,
         created_at: NaiveDateTime,
     }
@@ -182,7 +182,7 @@ async fn create_tags() {
     let app = test_utils::setup_test_app(database_url).await;
 
     let request_body = RequestBody {
-        user_id: 1,
+        user_uuid: "b6cea585-0dc0-4887-8247-201f164a6d6a".to_string(),
         name: "tag4".to_string(),
     };
     let req = test::TestRequest::post()
@@ -197,8 +197,8 @@ async fn create_tags() {
     assert_eq!(body.message, "Tag created successfully");
 
     let data = body.data;
-    assert_eq!(data.id, 4);
-    assert_eq!(data.user_id, 1);
+    assert_eq!(data.uuid.len(), 36);
+    assert_eq!(data.user_uuid.len(), 36);
     assert_eq!(data.name, "tag4");
     assert!(data.created_at.and_utc().timestamp() > 0);
 }

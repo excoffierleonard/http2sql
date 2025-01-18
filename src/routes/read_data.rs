@@ -30,7 +30,7 @@ async fn read_user_metadata(pool: Data<DbPool>) -> Result<ApiResponse<Vec<User>>
         SELECT u.email as user_email, u.created_at as user_created_at, t.name as tag_name, t.created_at as tag_created_at 
         FROM users u 
         LEFT JOIN tags t 
-        ON u.id = t.user_id
+        ON u.uuid = t.user_uuid
         ")
         .fetch_all(pool.get_pool())
         .await?;

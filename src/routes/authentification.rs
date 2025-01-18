@@ -6,6 +6,7 @@ use actix_web::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::{query, query_as, types::chrono::NaiveDateTime};
+use uuid::Uuid;
 
 #[derive(Deserialize, Debug)]
 struct Credentials {
@@ -15,7 +16,7 @@ struct Credentials {
 
 #[derive(Serialize, Debug)]
 struct Metadata {
-    id: i32,
+    uuid: String,
     email: String,
     created_at: NaiveDateTime,
 }
@@ -27,9 +28,12 @@ async fn register_user(
 ) -> Result<ApiResponse<Metadata>, ApiError> {
     let hashed_password = Password::new(&request_body.password).validate()?.hash()?;
 
+    let uuid = Uuid::new_v4().to_string();
+
     // First do the insert
     query!(
-        "INSERT INTO users (email, password) VALUES (?, ?)",
+        "INSERT INTO users (uuid, email, password) VALUES (?, ?, ?)",
+        uuid,
         &request_body.email,
         hashed_password
     )
@@ -39,8 +43,8 @@ async fn register_user(
     // Then get the inserted row
     let user_metadata = query_as!(
         Metadata,
-        "SELECT id, email, created_at FROM users WHERE email = ?",
-        &request_body.email
+        "SELECT uuid, email, created_at FROM users WHERE uuid = ?",
+        uuid
     )
     .fetch_one(pool.get_pool())
     .await?;

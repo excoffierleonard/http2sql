@@ -6,17 +6,18 @@ use actix_web::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::{query, query_as, types::chrono::NaiveDateTime};
+use uuid::Uuid;
 
 #[derive(Deserialize, Debug)]
 struct RequestBody {
-    user_id: i32,
+    user_uuid: String,
     name: String,
 }
 
 #[derive(Serialize, Debug)]
 struct ResponseData {
-    id: i32,
-    user_id: i32,
+    uuid: String,
+    user_uuid: String,
     name: String,
     created_at: NaiveDateTime,
 }
@@ -26,10 +27,13 @@ async fn create_tags(
     pool: Data<DbPool>,
     request_body: Json<RequestBody>,
 ) -> Result<ApiResponse<ResponseData>, ApiError> {
+    let uuid = Uuid::new_v4().to_string();
+
     // First do the insert
     query!(
-        "INSERT INTO tags (user_id, name) VALUES (?, ?)",
-        &request_body.user_id,
+        "INSERT INTO tags (uuid, user_uuid, name) VALUES (?, ?, ?)",
+        uuid,
+        &request_body.user_uuid,
         &request_body.name
     )
     .execute(pool.get_pool())
@@ -38,12 +42,10 @@ async fn create_tags(
     // Then get the inserted row
     let tags_metadata = query_as!(
         ResponseData,
-        "SELECT id, user_id, name, created_at 
-        FROM tags WHERE user_id = ? 
-        AND name = ? 
-        ORDER BY created_at DESC LIMIT 1",
-        &request_body.user_id,
-        &request_body.name
+        "SELECT uuid, user_uuid, name, created_at 
+        FROM tags WHERE uuid = ?
+        ",
+        uuid,
     )
     .fetch_one(pool.get_pool())
     .await?;

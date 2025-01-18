@@ -31,7 +31,7 @@ POST /v1/auth/register
 ```json
 {
     "data": {
-        "id": 2,
+        "uuid": "3ef041b2-0c27-477c-88f4-b68ba5e8de45",
         "email": "luke.warm@hotmail.fr",
         "created_at": "2025-01-14T14:36:06"
     },
@@ -109,7 +109,7 @@ POST /v1/tags
 
 ```json
 {
-    "user_id": 3,
+    "user_uuid": "3ef041b2-0c27-477c-88f4-b68ba5e8de45",
     "name": "tag3"
 }
 ```
@@ -119,8 +119,8 @@ POST /v1/tags
 ```json
 {
     "data": {
-        "id": 4,
-        "user_id": 3,
+        "uuid": "f127e4fc-db67-483f-bf9d-e0c77c1f8d9d",
+        "user_uuid": "3ef041b2-0c27-477c-88f4-b68ba5e8de45",
         "name": "tag3",
         "created_at": "2025-01-15T04:59:24"
     },

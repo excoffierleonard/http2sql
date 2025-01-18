@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\n        SELECT u.email as user_email, u.created_at as user_created_at, t.name as tag_name, t.created_at as tag_created_at \n        FROM users u \n        LEFT JOIN tags t \n        ON u.id = t.user_id\n        ",
+  "query": "\n        SELECT u.email as user_email, u.created_at as user_created_at, t.name as tag_name, t.created_at as tag_created_at \n        FROM users u \n        LEFT JOIN tags t \n        ON u.uuid = t.user_uuid\n        ",
   "describe": {
     "columns": [
       {
@@ -54,5 +54,5 @@
       true
     ]
   },
-  "hash": "d0706ec354c37c01d3d2263c86de4ce5587f7660df150b2cd5ddbe4815bbd2ea"
+  "hash": "7a460ef132b947f703314ee310152a5e70f23bdaba7ba841013aa0ca6098c6bc"
 }
