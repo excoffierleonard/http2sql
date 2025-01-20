@@ -30,7 +30,7 @@ impl ApiKey {
         let random_bytes: [u8; 32] = random();
 
         // Encode the random bytes to a base64 string to ensure its url safe
-        let secret = encode(&random_bytes);
+        let secret = encode(random_bytes);
 
         // The API key is the concatenation of a prefix and the secret
         let api_key = format!("{}{}", Self::PREFIX, secret);
