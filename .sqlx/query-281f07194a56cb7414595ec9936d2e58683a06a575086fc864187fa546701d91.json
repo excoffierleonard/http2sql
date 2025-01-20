@@ -1,11 +1,11 @@
 {
   "db_name": "MySQL",
-  "query": "\n        SELECT password \n        FROM users WHERE email = ?\n        ",
+  "query": "\n        SELECT password_hash \n        FROM users WHERE email = ?\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "password",
+        "name": "password_hash",
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | NO_DEFAULT_VALUE",
@@ -21,5 +21,5 @@
       false
     ]
   },
-  "hash": "b65b32a45de3ed2e5dde04f40d0115a71d973153c3db88f08f01941692735fca"
+  "hash": "281f07194a56cb7414595ec9936d2e58683a06a575086fc864187fa546701d91"
 }

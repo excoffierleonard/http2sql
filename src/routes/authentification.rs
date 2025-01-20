@@ -32,7 +32,7 @@ async fn sign_up(
 
     // First do the insert
     query!(
-        "INSERT INTO users (uuid, email, password) VALUES (?, ?, ?)",
+        "INSERT INTO users (uuid, email, password_hash) VALUES (?, ?, ?)",
         uuid,
         &request_body.email,
         hashed_password
@@ -57,7 +57,7 @@ async fn sign_up(
 
 #[derive(Serialize, Debug)]
 struct DbPassword {
-    password: String,
+    password_hash: String,
 }
 
 #[post("/auth/sign-in")]
@@ -68,7 +68,7 @@ async fn sign_in(
     let db_password = query_as!(
         DbPassword,
         "
-        SELECT password 
+        SELECT password_hash 
         FROM users WHERE email = ?
         ",
         &request_body.email
@@ -78,7 +78,7 @@ async fn sign_in(
 
     match Password::new(&request_body.password)
         .validate()?
-        .verify(&db_password.password)?
+        .verify(&db_password.password_hash)?
     {
         // TODO: Add handling for correct login
         true => Ok(ApiResponse::new(None, Some("Correct password".to_string()))),
