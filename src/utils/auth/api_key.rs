@@ -24,6 +24,23 @@ impl ApiKey {
         }
     }
 
+    // Helper method to check if a string matches our API key format
+    fn is_valid_format(key: &str) -> bool {
+        // First, check if it starts with our prefix
+        if !key.starts_with(Self::PREFIX) {
+            return false;
+        }
+
+        // Get the part after the prefix
+        let secret_part = &key[Self::PREFIX.len()..];
+
+        // Try to decode it as base64. If this fails, it's not a valid key
+        match decode(secret_part) {
+            Ok(decoded) => decoded.len() == 32, // Must be exactly 32 bytes when decoded
+            Err(_) => false,
+        }
+    }
+
     // Generate a new API key
     pub fn generate() -> Self {
         // A random 32 bytes long string
@@ -50,24 +67,8 @@ impl ApiKey {
         format!("{:x}", hasher.finalize())
     }
 
-    // Helper method to check if a string matches our API key format
-    fn is_valid_format(key: &str) -> bool {
-        // First, check if it starts with our prefix
-        if !key.starts_with(Self::PREFIX) {
-            return false;
-        }
-
-        // Get the part after the prefix
-        let secret_part = &key[Self::PREFIX.len()..];
-
-        // Try to decode it as base64. If this fails, it's not a valid key
-        match decode(secret_part) {
-            Ok(decoded) => decoded.len() == 32, // Must be exactly 32 bytes when decoded
-            Err(_) => false,
-        }
-    }
-
     // Method to get the string value
+    #[cfg(test)]
     pub fn as_str(&self) -> &str {
         &self.0
     }
