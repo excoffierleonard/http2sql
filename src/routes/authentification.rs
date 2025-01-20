@@ -21,8 +21,8 @@ struct Metadata {
     created_at: NaiveDateTime,
 }
 
-#[post("/auth/register")]
-async fn register_user(
+#[post("/auth/sign-up")]
+async fn sign_up(
     pool: Data<DbPool>,
     request_body: Json<Credentials>,
 ) -> Result<ApiResponse<Metadata>, ApiError> {
@@ -60,8 +60,8 @@ struct DbPassword {
     password: String,
 }
 
-#[post("/auth/login")]
-async fn login_user(
+#[post("/auth/sign-in")]
+async fn sign_in(
     pool: Data<DbPool>,
     request_body: Json<Credentials>,
 ) -> Result<ApiResponse<()>, ApiError> {

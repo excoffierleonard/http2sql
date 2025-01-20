@@ -97,7 +97,7 @@ async fn register_user_success() {
         password: "Randompassword2!".to_string(),
     };
     let req = test::TestRequest::post()
-        .uri("/v1/auth/register")
+        .uri("/v1/auth/sign-up")
         .set_json(&request_body)
         .to_request();
 
@@ -128,7 +128,7 @@ async fn login_user_success() {
         password: "Randompassword1!".to_string(),
     };
     let req = test::TestRequest::post()
-        .uri("/v1/auth/login")
+        .uri("/v1/auth/sign-in")
         .set_json(&request_body)
         .to_request();
 

@@ -12,7 +12,7 @@
 ### Register a new user
 
 ```http
-POST /v1/auth/register
+POST /v1/auth/sign-up
 ```
 
 #### Request Body
@@ -42,7 +42,7 @@ POST /v1/auth/register
 ### Authenticate a user
 
 ```http
-POST /v1/auth/login
+POST /v1/auth/sign-in
 ```
 
 #### Request Body
