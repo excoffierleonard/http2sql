@@ -128,7 +128,7 @@ mod tests {
     }
 
     #[test]
-    fn is_valid_format_works_with_generated_keys() {
+    fn validate_works_with_generated_keys() {
         let api_key = ApiKey::generate();
         assert!(ApiKey::is_valid_format(api_key.as_str()));
     }

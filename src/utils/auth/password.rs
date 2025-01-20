@@ -9,8 +9,7 @@ pub struct Password(String);
 
 impl Password {
     pub fn new(password: impl Into<String>) -> Result<Self, ApiError> {
-        let password = password.into();
-        let password = Password(password);
+        let password = Password(password.into());
         password.validate()?;
         Ok(password)
     }
