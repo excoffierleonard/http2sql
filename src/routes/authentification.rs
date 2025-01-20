@@ -1,3 +1,5 @@
+use std::usize;
+
 use crate::{
     db::DbPool,
     errors::ApiError,
@@ -20,7 +22,7 @@ struct Credentials {
 }
 
 #[derive(Serialize, Debug)]
-struct Metadata {
+struct UserMetadata {
     uuid: String,
     email: String,
     created_at: NaiveDateTime,
@@ -30,16 +32,33 @@ struct Metadata {
 async fn sign_up(
     pool: Data<DbPool>,
     request_body: Json<Credentials>,
-) -> Result<ApiResponse<Metadata>, ApiError> {
-    let hashed_password = Password::new(&request_body.password).validate()?.hash()?;
+) -> Result<ApiResponse<UserMetadata>, ApiError> {
+    let password = Password::new(&request_body.password);
+    let validated_password = password.validate()?;
 
+    let user_metadata =
+        register_user_in_db(&pool, &request_body.email, &validated_password).await?;
+
+    Ok(ApiResponse::new(
+        Some(user_metadata),
+        Some("User registered successfully".to_string()),
+    ))
+}
+
+async fn register_user_in_db(
+    pool: &DbPool,
+    email: &str,
+    password: &Password,
+) -> Result<UserMetadata, ApiError> {
     let uuid = Uuid::new_v4().to_string();
+
+    let hashed_password = password.hash()?;
 
     // First do the insert
     query!(
         "INSERT INTO users (uuid, email, password_hash) VALUES (?, ?, ?)",
         uuid,
-        &request_body.email,
+        email,
         hashed_password
     )
     .execute(pool.get_pool())
@@ -47,17 +66,14 @@ async fn sign_up(
 
     // Then get the inserted row
     let user_metadata = query_as!(
-        Metadata,
+        UserMetadata,
         "SELECT uuid, email, created_at FROM users WHERE uuid = ?",
         uuid
     )
     .fetch_one(pool.get_pool())
     .await?;
 
-    Ok(ApiResponse::new(
-        Some(user_metadata),
-        Some("User registered successfully".to_string()),
-    ))
+    Ok(user_metadata)
 }
 
 #[derive(Serialize, Debug)]
