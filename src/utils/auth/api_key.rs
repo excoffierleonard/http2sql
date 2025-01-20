@@ -33,7 +33,7 @@ impl ApiKey {
         let secret = encode(&random_bytes);
 
         // The API key is the concatenation of a prefix and the secret
-        let api_key = format!("ak_prod_{}", secret);
+        let api_key = format!("{}{}", Self::PREFIX, secret);
 
         Self(api_key)
     }

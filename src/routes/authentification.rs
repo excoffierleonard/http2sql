@@ -1,4 +1,9 @@
-use crate::{db::DbPool, errors::ApiError, responses::ApiResponse, utils::auth::Password};
+use crate::{
+    db::DbPool,
+    errors::ApiError,
+    responses::ApiResponse,
+    utils::auth::{ApiKey, Password},
+};
 use actix_web::{
     post,
     web::{Data, Json},
@@ -56,19 +61,25 @@ async fn sign_up(
 }
 
 #[derive(Serialize, Debug)]
-struct DbPassword {
+struct DbSignInResponse {
+    uuid: String,
     password_hash: String,
+}
+
+#[derive(Serialize, Debug)]
+struct ApiKeyResponse {
+    api_key: String,
 }
 
 #[post("/auth/sign-in")]
 async fn sign_in(
     pool: Data<DbPool>,
     request_body: Json<Credentials>,
-) -> Result<ApiResponse<()>, ApiError> {
-    let db_password = query_as!(
-        DbPassword,
+) -> Result<ApiResponse<ApiKeyResponse>, ApiError> {
+    let db_sign_in_response = query_as!(
+        DbSignInResponse,
         "
-        SELECT password_hash 
+        SELECT uuid, password_hash 
         FROM users WHERE email = ?
         ",
         &request_body.email
@@ -78,10 +89,37 @@ async fn sign_in(
 
     match Password::new(&request_body.password)
         .validate()?
-        .verify(&db_password.password_hash)?
+        .verify(&db_sign_in_response.password_hash)?
     {
-        // TODO: Add handling for correct login
-        true => Ok(ApiResponse::new(None, Some("Correct password".to_string()))),
+        true => {
+            let api_key = ApiKey::generate();
+
+            store_api_key(&pool, &db_sign_in_response.uuid, &api_key).await?;
+
+            Ok(ApiResponse::new(
+                Some(ApiKeyResponse {
+                    api_key: api_key.into_string(),
+                }),
+                Some("Password is correct, API key generated successfully".to_string()),
+            ))
+        }
         false => Err(ApiError::Unauthorized("Invalid password".to_string())),
     }
+}
+
+async fn store_api_key(pool: &DbPool, user_uuid: &str, api_key: &ApiKey) -> Result<(), ApiError> {
+    let uuid = Uuid::new_v4().to_string();
+
+    let api_key_hash = api_key.hash();
+
+    query!(
+        "INSERT INTO api_keys (uuid, user_uuid, api_key_hash) VALUES (?, ?, ?)",
+        uuid,
+        user_uuid,
+        api_key_hash,
+    )
+    .execute(pool.get_pool())
+    .await?;
+
+    Ok(())
 }
