@@ -8,11 +8,14 @@ use argon2::{
 pub struct Password(String);
 
 impl Password {
-    pub fn new(password: impl Into<String>) -> Self {
-        Self(password.into())
+    pub fn new(password: impl Into<String>) -> Result<Self, ApiError> {
+        let password = password.into();
+        let password = Password(password);
+        password.validate()?;
+        Ok(password)
     }
 
-    pub fn validate(&self) -> Result<&Self, ApiError> {
+    fn validate(&self) -> Result<&Self, ApiError> {
         let validations = [
             (self.0.is_empty(), "Password cannot be empty"),
             (
@@ -79,41 +82,37 @@ mod tests {
 
     #[test]
     fn create_password() {
-        let password = Password::new("Randompassword4!")
-            .validate()
-            .unwrap()
-            .hash()
-            .unwrap();
+        let password = Password::new("Randompassword4!").unwrap().hash().unwrap();
         println!("{:?}", password);
     }
 
     #[test]
     fn validate_password() {
         // Test empty password
-        assert!(Password::new("").validate().is_err());
+        assert!(Password::new("").is_err());
 
         // Test non-ASCII characters
-        assert!(Password::new("😀".repeat(12)).validate().is_err());
+        assert!(Password::new("😀".repeat(12)).is_err());
 
         // Test exact boundary conditions
-        assert!(Password::new("a".repeat(11)).validate().is_err());
-        assert!(Password::new("a".repeat(65)).validate().is_err());
+        assert!(Password::new("a".repeat(11)).is_err());
+        assert!(Password::new("a".repeat(65)).is_err());
 
         // Test required characters
-        assert!(Password::new("abcdefghij1!").validate().is_err());
-        assert!(Password::new("ABCDEFGHIJ1!").validate().is_err());
-        assert!(Password::new("Abcdefghijk!").validate().is_err());
-        assert!(Password::new("Abcdefghijk1").validate().is_err());
+        assert!(Password::new("abcdefghij1!").is_err());
+        assert!(Password::new("ABCDEFGHIJ1!").is_err());
+        assert!(Password::new("Abcdefghijk!").is_err());
+        assert!(Password::new("Abcdefghijk1").is_err());
 
         // Test valid passwords
-        assert!(Password::new("Abcd123!efgh").validate().is_ok());
-        assert!(Password::new("P@ssw0rd585.").validate().is_ok());
-        assert!(Password::new("Super$3cret!Pass").validate().is_ok());
+        assert!(Password::new("Abcd123!efgh").is_ok());
+        assert!(Password::new("P@ssw0rd585.").is_ok());
+        assert!(Password::new("Super$3cret!Pass").is_ok());
     }
 
     #[test]
     fn hash_password() {
-        let password = Password::new("password");
+        let password = Password::new("Randompassword1!").unwrap();
 
         let hash1 = password.hash().unwrap();
         let hash2 = password.hash().unwrap();
@@ -134,12 +133,12 @@ mod tests {
     #[test]
     fn verify_password() {
         // Test a matching password
-        let password = Password::new("password");
+        let password = Password::new("Randompassword1!").unwrap();
         let hash = password.hash().unwrap();
         assert!(password.verify(&hash).unwrap());
 
         // Test a non-matching password
-        let different_password = Password::new("different_password");
+        let different_password = Password::new("Randompassword2!").unwrap();
         let different_hash = different_password.hash().unwrap();
         assert!(!password.verify(&different_hash).unwrap());
 
