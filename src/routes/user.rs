@@ -1,9 +1,5 @@
 use crate::{db::DbPool, errors::ApiError, responses::ApiResponse, utils::auth::ApiKey};
-use actix_web::{
-    get,
-    web::{Data, Path},
-    Result,
-};
+use actix_web::{get, web::Data, Result};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use chrono::Utc;
 use serde::Serialize;
@@ -11,27 +7,23 @@ use sqlx::{query, query_as, types::chrono::NaiveDateTime};
 
 #[derive(Serialize, Debug)]
 struct UserMetadata {
+    uuid: String,
     email: String,
     created_at: NaiveDateTime,
 }
 
-#[get("/user/{uuid}")]
+#[get("/user/metadata")]
 async fn get_user_metadata(
     auth: BearerAuth,
     pool: Data<DbPool>,
-    path: Path<String>,
 ) -> Result<ApiResponse<UserMetadata>, ApiError> {
     let api_key = auth.token();
-    let user_uuid = api_key_auth(&pool, api_key).await?;
-
-    if user_uuid != path.into_inner() {
-        return Err(ApiError::Unauthorized("Access denied".to_string()));
-    }
+    let uuid = api_key_auth(&pool, api_key).await?;
 
     let user_metadata = query_as!(
         UserMetadata,
-        "SELECT email, created_at FROM users WHERE uuid = ?",
-        &user_uuid,
+        "SELECT uuid, email, created_at FROM users WHERE uuid = ?",
+        &uuid,
     )
     .fetch_one(pool.get_pool())
     .await?;

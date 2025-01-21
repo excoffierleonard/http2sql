@@ -87,7 +87,6 @@ struct VerifiedUser {
 
 #[derive(Serialize, Debug)]
 struct ApiKeyResponse {
-    user_uuid: String,
     api_key: String,
     created_at: NaiveDateTime,
     expires_at: Option<NaiveDateTime>,
@@ -109,7 +108,6 @@ async fn sign_in(
     // Return success response
     Ok(ApiResponse::new(
         Some(ApiKeyResponse {
-            user_uuid: verified_user.uuid,
             api_key: api_key.into_string(),
             created_at: api_key_metadata.created_at,
             expires_at: api_key_metadata.expires_at,

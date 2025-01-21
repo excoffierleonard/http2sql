@@ -20,20 +20,7 @@ curl --request POST \
            "password": "Randompassword2!"
       }'
 
-# Fetch the user table
-curl --request GET \
-     --url http://localhost:8080/v1/users
-
-# Create a tag
-curl --request POST \
-     --url 'http://localhost:8080/v1/tags' \
-     --header 'Content-Type: application/json' \
-     --data '{
-           "api_key": "ak_prod_kOYoM5SeT+M3LqWdClwWZO0/E9Fogg63wGUxTuolMNQ=",
-           "name": "tag3"
-      }'
-
 # Get User Metadata
 curl --request GET \
-     --url 'http://localhost:8080/v1/user/b6cea585-0dc0-4887-8247-201f164a6d6a' \
+     --url 'http://localhost:8080/v1/user/metadata' \
      --header 'Authorization: Bearer ak_prod_kOYoM5SeT+M3LqWdClwWZO0/E9Fogg63wGUxTuolMNQ='

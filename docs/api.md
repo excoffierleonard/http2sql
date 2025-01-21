@@ -30,7 +30,6 @@ POST /v1/auth/sign-up
 ```json
 {
     "data": {
-        "uuid": "3ef041b2-0c27-477c-88f4-b68ba5e8de45",
         "email": "luke.warm@hotmail.fr",
         "created_at": "2025-01-14T14:36:06"
     },
@@ -89,6 +88,7 @@ Authorization: Bearer ak_prod_kOYoM5SeT+M3LqWdClwWZO0/E9Fogg63wGUxTuolMNQ=
 ```json
 {
     "data": {
+        "uuid": "b6cea585-0dc0-4887-8247-201f164a6d6a",
         "email": "john.doe@gmail.com",
         "created_at": "2025-01-21T19:40:50"
     },

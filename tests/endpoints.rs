@@ -109,7 +109,6 @@ async fn login_user_success() {
 
     #[derive(Deserialize, Debug)]
     struct LoginResponse {
-        user_uuid: String,
         api_key: String,
         created_at: NaiveDateTime,
         expires_at: NaiveDateTime,
@@ -131,10 +130,6 @@ async fn login_user_success() {
     assert!(resp.status().is_success());
 
     let response_body: test_types::ResponseData<LoginResponse> = test::read_body_json(resp).await;
-    assert_eq!(
-        response_body.data.user_uuid,
-        "b6cea585-0dc0-4887-8247-201f164a6d6a"
-    );
     assert_eq!(response_body.data.api_key.len(), 52);
     assert!(response_body.data.created_at.and_utc().timestamp() > 0);
     assert!(response_body.data.expires_at.and_utc().timestamp() > 0);
@@ -148,6 +143,7 @@ async fn login_user_success() {
 async fn fetch_user_metadata() {
     #[derive(Deserialize, Debug)]
     struct UserMetadata {
+        uuid: String,
         email: String,
         created_at: NaiveDateTime,
     }
@@ -155,10 +151,9 @@ async fn fetch_user_metadata() {
     let (database_url, _container) = test_utils::setup_container().await;
     let app = test_utils::setup_test_app(database_url).await;
 
-    let uuid = "b6cea585-0dc0-4887-8247-201f164a6d6a";
     let api_key = "ak_prod_kOYoM5SeT+M3LqWdClwWZO0/E9Fogg63wGUxTuolMNQ=";
     let req = test::TestRequest::get()
-        .uri(format!("/v1/user/{}", uuid).as_str())
+        .uri("/v1/user/metadata")
         .insert_header(("Authorization", format!("Bearer {}", api_key)))
         .to_request();
 
@@ -169,6 +164,7 @@ async fn fetch_user_metadata() {
     assert_eq!(body.message, "User metadata retrieved successfully");
 
     let data = body.data;
+    assert_eq!(data.uuid, "b6cea585-0dc0-4887-8247-201f164a6d6a");
     assert_eq!(data.email, "john.doe@gmail.com");
     assert!(data.created_at.and_utc().timestamp() > 0);
 }
