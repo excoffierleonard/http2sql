@@ -27,15 +27,16 @@ async fn create_tags(
     pool: Data<DbPool>,
     request_body: Json<RequestBody>,
 ) -> Result<ApiResponse<ResponseData>, ApiError> {
-    let uuid = Uuid::new_v4().to_string();
+    // Auth
+    let user_metadata = api_key_auth(&pool, &request_body.api_key).await?;
 
-    let api_key_hash = ApiKey::new(&request_body.api_key)?.hash();
+    let uuid = Uuid::new_v4().to_string();
 
     // First do the insert
     query!(
-        "INSERT INTO tags (uuid, user_uuid, name) VALUES (?, (SELECT user_uuid FROM api_keys WHERE api_key_hash = ?), ?)",
+        "INSERT INTO tags (uuid, user_uuid, name) VALUES (?, ?, ?)",
         uuid,
-        &api_key_hash,
+        &user_metadata.uuid,
         &request_body.name
     )
     .execute(pool.get_pool())
@@ -56,4 +57,29 @@ async fn create_tags(
         Some(tags_metadata),
         Some("Tag created successfully".to_string()),
     ))
+}
+
+struct UserMetadata {
+    uuid: String,
+}
+
+async fn api_key_auth(pool: &DbPool, api_key: &str) -> Result<UserMetadata, ApiError> {
+    let api_key_hash = ApiKey::new(api_key)?.hash();
+
+    let user_uuid = query_as!(
+        UserMetadata,
+        "SELECT user_uuid as uuid FROM api_keys WHERE api_key_hash = ?",
+        api_key_hash
+    )
+    .fetch_one(pool.get_pool())
+    .await?;
+
+    query!(
+        "UPDATE api_keys SET last_used_at = CURRENT_TIMESTAMP WHERE api_key_hash = ?",
+        api_key_hash
+    )
+    .execute(pool.get_pool())
+    .await?;
+
+    Ok(user_uuid)
 }

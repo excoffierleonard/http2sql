@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO tags (uuid, user_uuid, name) VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "22c363c416576dd8f417b651a82dbd9c669a759ba2f108ddedbc34e8af7b1ebb"
+}
