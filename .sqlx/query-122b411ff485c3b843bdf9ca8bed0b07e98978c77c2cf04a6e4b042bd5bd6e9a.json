@@ -1,0 +1,34 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT created_at, expires_at FROM api_keys WHERE uuid = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "created_at",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "NOT_NULL | BINARY",
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "expires_at",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "BINARY",
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "122b411ff485c3b843bdf9ca8bed0b07e98978c77c2cf04a6e4b042bd5bd6e9a"
+}

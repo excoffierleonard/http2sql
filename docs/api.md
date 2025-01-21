@@ -62,7 +62,9 @@ POST /v1/auth/sign-in
 ```json
 {
     "data": {
-        "api_key": "ak_prod_IoJY0DGzXoiEqRmxr6FH/vXvHL5H26uiuGst9+3nHl0="
+        "api_key": "ak_prod_IoJY0DGzXoiEqRmxr6FH/vXvHL5H26uiuGst9+3nHl0=",
+        "created_at": "2025-01-14T14:36:06",
+        "expires_at": "2025-01-21T14:36:06"
     },
     "message": "Password is correct, API key generated successfully"
 }

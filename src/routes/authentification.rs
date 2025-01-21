@@ -88,6 +88,8 @@ struct VerifiedUser {
 #[derive(Serialize, Debug)]
 struct ApiKeyResponse {
     api_key: String,
+    created_at: NaiveDateTime,
+    expires_at: Option<NaiveDateTime>,
 }
 
 #[post("/auth/sign-in")]
@@ -101,12 +103,14 @@ async fn sign_in(
 
     // Generate and store API key
     let api_key = ApiKey::generate();
-    store_api_key(&pool, &verified_user.uuid, &api_key).await?;
+    let api_key_metadata = store_api_key(&pool, &verified_user.uuid, &api_key).await?;
 
     // Return success response
     Ok(ApiResponse::new(
         Some(ApiKeyResponse {
             api_key: api_key.into_string(),
+            created_at: api_key_metadata.created_at,
+            expires_at: api_key_metadata.expires_at,
         }),
         Some("Password is correct, API key generated successfully".to_string()),
     ))
@@ -139,12 +143,23 @@ async fn verify_user_credentials(
     })
 }
 
+#[derive(Serialize, Debug)]
+struct ApiKeyMetadata {
+    created_at: NaiveDateTime,
+    expires_at: Option<NaiveDateTime>,
+}
+
 // Store the API key in the database
-async fn store_api_key(pool: &DbPool, user_uuid: &str, api_key: &ApiKey) -> Result<(), ApiError> {
+async fn store_api_key(
+    pool: &DbPool,
+    user_uuid: &str,
+    api_key: &ApiKey,
+) -> Result<ApiKeyMetadata, ApiError> {
     let uuid = Uuid::new_v4().to_string();
 
     let api_key_hash = api_key.hash();
 
+    // Store the API key in the database
     query!(
         "INSERT INTO api_keys (uuid, user_uuid, api_key_hash) VALUES (?, ?, ?)",
         uuid,
@@ -154,5 +169,14 @@ async fn store_api_key(pool: &DbPool, user_uuid: &str, api_key: &ApiKey) -> Resu
     .execute(pool.get_pool())
     .await?;
 
-    Ok(())
+    // Get the metadata of the stored API key
+    let api_key_metadata = query_as!(
+        ApiKeyMetadata,
+        "SELECT created_at, expires_at FROM api_keys WHERE uuid = ?",
+        uuid
+    )
+    .fetch_one(pool.get_pool())
+    .await?;
+
+    Ok(api_key_metadata)
 }

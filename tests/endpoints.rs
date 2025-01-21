@@ -123,6 +123,8 @@ async fn login_user_success() {
     #[derive(Deserialize, Debug)]
     struct LoginResponse {
         api_key: String,
+        created_at: NaiveDateTime,
+        expires_at: NaiveDateTime,
     }
 
     let (database_url, _container) = test_utils::setup_container().await;
@@ -142,6 +144,8 @@ async fn login_user_success() {
 
     let response_body: test_types::ResponseData<LoginResponse> = test::read_body_json(resp).await;
     assert_eq!(response_body.data.api_key.len(), 52);
+    assert!(response_body.data.created_at.and_utc().timestamp() > 0);
+    assert!(response_body.data.expires_at.and_utc().timestamp() > 0);
     assert_eq!(
         response_body.message,
         "Password is correct, API key generated successfully"
