@@ -69,7 +69,7 @@ impl ApiKey {
 
     // Method to get the string value
     #[cfg(test)]
-    pub fn as_str(&self) -> &str {
+    fn as_str(&self) -> &str {
         &self.0
     }
 
