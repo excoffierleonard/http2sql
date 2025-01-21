@@ -1,5 +1,5 @@
 use crate::errors::ApiError;
-use base64::{decode, encode};
+use base64::{engine::general_purpose::STANDARD, Engine};
 use rand::random;
 use sha2::{Digest, Sha256};
 
@@ -27,7 +27,9 @@ impl ApiKey {
             ),
             // The base64 encoded data must be 32 bytes long
             (
-                decode(&self.0[Self::PREFIX.len()..]).map_or(true, |decoded| decoded.len() != 32),
+                STANDARD
+                    .decode(&self.0[Self::PREFIX.len()..])
+                    .map_or(true, |decoded| decoded.len() != 32),
                 "API key must contain valid base64 encoded data of correct length",
             ),
         ];
@@ -47,7 +49,7 @@ impl ApiKey {
         let random_bytes: [u8; 32] = random();
 
         // Encode the random bytes to a base64 string to ensure its url safe
-        let secret = encode(random_bytes);
+        let secret = STANDARD.encode(random_bytes);
 
         // The API key is the concatenation of a prefix and the secret
         let api_key = format!("{}{}", Self::PREFIX, secret);
