@@ -69,6 +69,12 @@ impl From<argon2::password_hash::Error> for ApiError {
     }
 }
 
+impl From<base64::DecodeError> for ApiError {
+    fn from(_: base64::DecodeError) -> Self {
+        ApiError::InvalidInput("Invalid base64 format".to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

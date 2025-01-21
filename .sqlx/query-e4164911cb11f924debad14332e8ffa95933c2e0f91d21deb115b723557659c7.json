@@ -1,0 +1,36 @@
+{
+  "db_name": "MySQL",
+  "query": "\n        SELECT uuid, password_hash \n        FROM users WHERE email = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "uuid",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | PRIMARY_KEY | UNIQUE_KEY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 144
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "password_hash",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 388
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "e4164911cb11f924debad14332e8ffa95933c2e0f91d21deb115b723557659c7"
+}

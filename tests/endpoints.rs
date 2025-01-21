@@ -97,7 +97,7 @@ async fn register_user_success() {
         password: "Randompassword2!".to_string(),
     };
     let req = test::TestRequest::post()
-        .uri("/v1/auth/register")
+        .uri("/v1/auth/sign-up")
         .set_json(&request_body)
         .to_request();
 
@@ -120,6 +120,11 @@ async fn login_user_success() {
         password: String,
     }
 
+    #[derive(Deserialize, Debug)]
+    struct LoginResponse {
+        api_key: String,
+    }
+
     let (database_url, _container) = test_utils::setup_container().await;
     let app = test_utils::setup_test_app(database_url).await;
 
@@ -128,15 +133,19 @@ async fn login_user_success() {
         password: "Randompassword1!".to_string(),
     };
     let req = test::TestRequest::post()
-        .uri("/v1/auth/login")
+        .uri("/v1/auth/sign-in")
         .set_json(&request_body)
         .to_request();
 
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
 
-    let response_body: test_types::ResponseData<Option<()>> = test::read_body_json(resp).await;
-    assert_eq!(response_body.message, "Correct password");
+    let response_body: test_types::ResponseData<LoginResponse> = test::read_body_json(resp).await;
+    assert_eq!(response_body.data.api_key.len(), 52);
+    assert_eq!(
+        response_body.message,
+        "Password is correct, API key generated successfully"
+    );
 }
 
 #[actix_web::test]

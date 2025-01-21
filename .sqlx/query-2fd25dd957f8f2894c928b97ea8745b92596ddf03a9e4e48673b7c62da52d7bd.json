@@ -8,7 +8,7 @@
         "name": "uuid",
         "type_info": {
           "type": "String",
-          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "flags": "NOT_NULL | PRIMARY_KEY | UNIQUE_KEY | NO_DEFAULT_VALUE",
           "char_set": 224,
           "max_size": 144
         }

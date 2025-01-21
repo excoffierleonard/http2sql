@@ -4,7 +4,7 @@ set -e
 
 # Register a new user
 curl --request POST \
-     --url 'http://localhost:8080/v1/auth/register' \
+     --url 'http://localhost:8080/v1/auth/sign-up' \
      --header 'Content-Type: application/json' \
      --data '{
            "email": "luke.warm@hotmail.fr",
@@ -13,7 +13,7 @@ curl --request POST \
 
 # Login the user
 curl --request POST \
-     --url 'http://localhost:8080/v1/auth/login' \
+     --url 'http://localhost:8080/v1/auth/sign-in' \
      --header 'Content-Type: application/json' \
      --data '{
            "email": "luke.warm@hotmail.fr",

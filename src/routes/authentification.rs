@@ -1,4 +1,9 @@
-use crate::{db::DbPool, errors::ApiError, responses::ApiResponse, utils::auth::Password};
+use crate::{
+    db::DbPool,
+    errors::ApiError,
+    responses::ApiResponse,
+    utils::auth::{ApiKey, Password},
+};
 use actix_web::{
     post,
     web::{Data, Json},
@@ -15,39 +20,22 @@ struct Credentials {
 }
 
 #[derive(Serialize, Debug)]
-struct Metadata {
+struct UserMetadata {
     uuid: String,
     email: String,
     created_at: NaiveDateTime,
 }
 
-#[post("/auth/register")]
-async fn register_user(
+#[post("/auth/sign-up")]
+async fn sign_up(
     pool: Data<DbPool>,
     request_body: Json<Credentials>,
-) -> Result<ApiResponse<Metadata>, ApiError> {
-    let hashed_password = Password::new(&request_body.password).validate()?.hash()?;
+) -> Result<ApiResponse<UserMetadata>, ApiError> {
+    // Validate the password
+    let password = Password::new(&request_body.password)?;
 
-    let uuid = Uuid::new_v4().to_string();
-
-    // First do the insert
-    query!(
-        "INSERT INTO users (uuid, email, password) VALUES (?, ?, ?)",
-        uuid,
-        &request_body.email,
-        hashed_password
-    )
-    .execute(pool.get_pool())
-    .await?;
-
-    // Then get the inserted row
-    let user_metadata = query_as!(
-        Metadata,
-        "SELECT uuid, email, created_at FROM users WHERE uuid = ?",
-        uuid
-    )
-    .fetch_one(pool.get_pool())
-    .await?;
+    // Register the user in the database
+    let user_metadata = register_user_in_db(&pool, &request_body.email, &password).await?;
 
     Ok(ApiResponse::new(
         Some(user_metadata),
@@ -55,33 +43,116 @@ async fn register_user(
     ))
 }
 
-#[derive(Serialize, Debug)]
-struct DbPassword {
-    password: String,
-}
+async fn register_user_in_db(
+    pool: &DbPool,
+    email: &str,
+    password: &Password,
+) -> Result<UserMetadata, ApiError> {
+    let uuid = Uuid::new_v4().to_string();
 
-#[post("/auth/login")]
-async fn login_user(
-    pool: Data<DbPool>,
-    request_body: Json<Credentials>,
-) -> Result<ApiResponse<()>, ApiError> {
-    let db_password = query_as!(
-        DbPassword,
-        "
-        SELECT password 
-        FROM users WHERE email = ?
-        ",
-        &request_body.email
+    let hashed_password = password.hash()?;
+
+    // First do the insert
+    query!(
+        "INSERT INTO users (uuid, email, password_hash) VALUES (?, ?, ?)",
+        uuid,
+        email,
+        hashed_password
+    )
+    .execute(pool.get_pool())
+    .await?;
+
+    // Then get the inserted row
+    let user_metadata = query_as!(
+        UserMetadata,
+        "SELECT uuid, email, created_at FROM users WHERE uuid = ?",
+        uuid
     )
     .fetch_one(pool.get_pool())
     .await?;
 
-    match Password::new(&request_body.password)
-        .validate()?
-        .verify(&db_password.password)?
-    {
-        // TODO: Add handling for correct login
-        true => Ok(ApiResponse::new(None, Some("Correct password".to_string()))),
-        false => Err(ApiError::Unauthorized("Invalid password".to_string())),
-    }
+    Ok(user_metadata)
+}
+
+#[derive(Serialize, Debug)]
+struct DbSignInResponse {
+    uuid: String,
+    password_hash: String,
+}
+
+#[derive(Debug)]
+struct VerifiedUser {
+    uuid: String,
+}
+
+#[derive(Serialize, Debug)]
+struct ApiKeyResponse {
+    api_key: String,
+}
+
+#[post("/auth/sign-in")]
+async fn sign_in(
+    pool: Data<DbPool>,
+    request_body: Json<Credentials>,
+) -> Result<ApiResponse<ApiKeyResponse>, ApiError> {
+    // Verify user credentials
+    let password = Password::new(&request_body.password)?;
+    let verified_user = verify_user_credentials(&pool, &request_body.email, &password).await?;
+
+    // Generate and store API key
+    let api_key = ApiKey::generate();
+    store_api_key(&pool, &verified_user.uuid, &api_key).await?;
+
+    // Return success response
+    Ok(ApiResponse::new(
+        Some(ApiKeyResponse {
+            api_key: api_key.into_string(),
+        }),
+        Some("Password is correct, API key generated successfully".to_string()),
+    ))
+}
+
+// This function handles the database query and password verification
+async fn verify_user_credentials(
+    pool: &DbPool,
+    email: &str,
+    password: &Password,
+) -> Result<VerifiedUser, ApiError> {
+    // Query the database for user credentials
+    let db_sign_in_response = query_as!(
+        DbSignInResponse,
+        "
+        SELECT uuid, password_hash 
+        FROM users WHERE email = ?
+        ",
+        email
+    )
+    .fetch_one(pool.get_pool())
+    .await?;
+
+    // Verify the password - if verification fails, this will return early with an error
+    password.verify(&db_sign_in_response.password_hash)?;
+
+    // If we get here, password verification succeeded
+    Ok(VerifiedUser {
+        uuid: db_sign_in_response.uuid,
+    })
+}
+
+// Store the API key in the database
+async fn store_api_key(pool: &DbPool, user_uuid: &str, api_key: &ApiKey) -> Result<(), ApiError> {
+    let uuid = Uuid::new_v4().to_string();
+
+    let api_key_hash = api_key.hash();
+
+    query!(
+        "INSERT INTO api_keys (uuid, user_uuid, api_key_hash) VALUES (?, ?, ?)",
+        uuid,
+        user_uuid,
+        api_key_hash,
+    )
+    .execute(pool.get_pool())
+    .await?;
+
+    Ok(())
 }

@@ -1,26 +1,37 @@
 -- @block Init DB
 -- Delete the tables if they exists
 DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS api_keys;
 DROP TABLE IF EXISTS users;
 -- Create the schema
 CREATE TABLE users (
-    `uuid` CHAR(36) NOT NULL,
-    `email` VARCHAR(255) NOT NULL UNIQUE,
-    `password` CHAR(97) NOT NULL,
-    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`uuid`)
+    uuid CHAR(36) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash CHAR(97) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (uuid)
+);
+CREATE TABLE api_keys (
+    uuid CHAR(36) NOT NULL UNIQUE,
+    user_uuid CHAR(36) NOT NULL,
+    api_key_hash CHAR(64) NOT NULL UNIQUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_used_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    expires_at DATETIME DEFAULT (DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 7 DAY)),
+    PRIMARY KEY (uuid),
+    FOREIGN KEY (user_uuid) REFERENCES users(uuid)
 );
 CREATE TABLE tags (
-    `uuid` CHAR(36) NOT NULL,
-    `user_uuid` CHAR(36) NOT NULL,
-    `name` VARCHAR(255) NOT NULL,
-    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (`user_uuid`, `name`),
-    PRIMARY KEY (`uuid`),
-    FOREIGN KEY (`user_uuid`) REFERENCES `users`(`uuid`)
+    uuid CHAR(36) NOT NULL,
+    user_uuid CHAR(36) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_uuid, name),
+    PRIMARY KEY (uuid),
+    FOREIGN KEY (user_uuid) REFERENCES users(uuid)
 );
 -- Insert some mock data
-INSERT INTO users (uuid, email, password)
+INSERT INTO users (uuid, email, password_hash)
 VALUES (
         'b6cea585-0dc0-4887-8247-201f164a6d6a',
         'john.doe@gmail.com',
