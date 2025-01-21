@@ -19,6 +19,7 @@ serde = { version = "1.0.217", features = ["derive"] }
 tokio = { version = "1.43.0", features = ["full"] }
 actix-web = "4.9.0"
 sqlx = { version = "0.8.3", features = ["runtime-tokio", "mysql", "chrono", "macros", "json"] }
+actix-web-httpauth = "0.8.2"
 
 [dev-dependencies]
 actix-http = "3.9.0"
