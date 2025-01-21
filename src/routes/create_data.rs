@@ -4,6 +4,7 @@ use actix_web::{
     web::{Data, Json},
     Result,
 };
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sqlx::{query, query_as, types::chrono::NaiveDateTime};
 use uuid::Uuid;
@@ -28,15 +29,15 @@ async fn create_tags(
     request_body: Json<RequestBody>,
 ) -> Result<ApiResponse<ResponseData>, ApiError> {
     // Auth
-    let user_metadata = api_key_auth(&pool, &request_body.api_key).await?;
+    let user_uuid = api_key_auth(&pool, &request_body.api_key).await?;
 
     let uuid = Uuid::new_v4().to_string();
 
     // First do the insert
     query!(
         "INSERT INTO tags (uuid, user_uuid, name) VALUES (?, ?, ?)",
-        uuid,
-        &user_metadata.uuid,
+        &uuid,
+        &user_uuid,
         &request_body.name
     )
     .execute(pool.get_pool())
@@ -59,21 +60,31 @@ async fn create_tags(
     ))
 }
 
-struct UserMetadata {
-    uuid: String,
+struct ApiKeyMetadata {
+    user_uuid: String,
+    expires_at: Option<NaiveDateTime>,
 }
 
-async fn api_key_auth(pool: &DbPool, api_key: &str) -> Result<UserMetadata, ApiError> {
+async fn api_key_auth(pool: &DbPool, api_key: &str) -> Result<String, ApiError> {
     let api_key_hash = ApiKey::new(api_key)?.hash();
 
-    let user_uuid = query_as!(
-        UserMetadata,
-        "SELECT user_uuid as uuid FROM api_keys WHERE api_key_hash = ?",
+    // Get the user_uuid associated with the api_key
+    let api_key_metadata = query_as!(
+        ApiKeyMetadata,
+        "SELECT user_uuid, expires_at FROM api_keys WHERE api_key_hash = ?",
         api_key_hash
     )
     .fetch_one(pool.get_pool())
     .await?;
 
+    // Check if the API key has expired
+    if let Some(expires_at) = api_key_metadata.expires_at {
+        if expires_at < Utc::now().naive_utc() {
+            return Err(ApiError::Unauthorized("API key has expired".to_string()));
+        }
+    }
+
+    // Update the last_used_at timestamp
     query!(
         "UPDATE api_keys SET last_used_at = CURRENT_TIMESTAMP WHERE api_key_hash = ?",
         api_key_hash
@@ -81,5 +92,5 @@ async fn api_key_auth(pool: &DbPool, api_key: &str) -> Result<UserMetadata, ApiE
     .execute(pool.get_pool())
     .await?;
 
-    Ok(user_uuid)
+    Ok(api_key_metadata.user_uuid)
 }
