@@ -31,8 +31,10 @@ async fn sign_up(
     pool: Data<DbPool>,
     request_body: Json<Credentials>,
 ) -> Result<ApiResponse<UserMetadata>, ApiError> {
+    // Validate the password
     let password = Password::new(&request_body.password)?;
 
+    // Register the user in the database
     let user_metadata = register_user_in_db(&pool, &request_body.email, &password).await?;
 
     Ok(ApiResponse::new(
@@ -94,8 +96,8 @@ async fn sign_in(
     request_body: Json<Credentials>,
 ) -> Result<ApiResponse<ApiKeyResponse>, ApiError> {
     // Verify user credentials
-    let verified_user =
-        verify_user_credentials(&pool, &request_body.email, &request_body.password).await?;
+    let password = Password::new(&request_body.password)?;
+    let verified_user = verify_user_credentials(&pool, &request_body.email, &password).await?;
 
     // Generate and store API key
     let api_key = ApiKey::generate();
@@ -114,11 +116,8 @@ async fn sign_in(
 async fn verify_user_credentials(
     pool: &DbPool,
     email: &str,
-    password: &str,
+    password: &Password,
 ) -> Result<VerifiedUser, ApiError> {
-    // Validate the password before querying the database
-    let password = Password::new(password)?;
-
     // Query the database for user credentials
     let db_sign_in_response = query_as!(
         DbSignInResponse,
