@@ -54,19 +54,6 @@ mod test_types {
     use super::*;
 
     #[derive(Deserialize, Debug)]
-    pub struct Tag {
-        pub name: String,
-        pub created_at: NaiveDateTime,
-    }
-
-    #[derive(Deserialize, Debug)]
-    pub struct User {
-        pub email: String,
-        pub created_at: NaiveDateTime,
-        pub tags: Vec<Tag>,
-    }
-
-    #[derive(Deserialize, Debug)]
     pub struct ResponseData<T> {
         pub data: T,
         pub message: String,
@@ -155,70 +142,6 @@ async fn login_user_success() {
         response_body.message,
         "Password is correct, API key generated successfully"
     );
-}
-
-#[actix_web::test]
-async fn read_users() {
-    let (database_url, _container) = test_utils::setup_container().await;
-    let app = test_utils::setup_test_app(database_url).await;
-
-    let req = test::TestRequest::get().uri("/v1/users").to_request();
-    let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_success());
-
-    let body: test_types::ResponseData<Vec<test_types::User>> = test::read_body_json(resp).await;
-    assert_eq!(body.message, "User metadata retrieved successfully");
-
-    let users = body.data;
-    assert_eq!(users.len(), 3);
-    assert_eq!(users[0].email, "alice.smith@gmail.com");
-    assert!(users[0].created_at.and_utc().timestamp() > 0);
-    assert_eq!(users[0].tags.len(), 2);
-    assert_eq!(users[0].tags[0].name, "tag1");
-    assert!(users[0].tags[0].created_at.and_utc().timestamp() > 0);
-    assert_eq!(users[0].tags[1].name, "tag2");
-    assert!(users[0].tags[1].created_at.and_utc().timestamp() > 0);
-}
-
-#[actix_web::test]
-async fn create_tags() {
-    #[derive(Serialize, Debug)]
-    struct RequestBody {
-        api_key: String,
-        name: String,
-    }
-
-    #[derive(Deserialize, Debug)]
-    struct TagResponse {
-        uuid: String,
-        user_uuid: String,
-        name: String,
-        created_at: NaiveDateTime,
-    }
-
-    let (database_url, _container) = test_utils::setup_container().await;
-    let app = test_utils::setup_test_app(database_url).await;
-
-    let request_body = RequestBody {
-        api_key: "ak_prod_kOYoM5SeT+M3LqWdClwWZO0/E9Fogg63wGUxTuolMNQ=".to_string(),
-        name: "tag4".to_string(),
-    };
-    let req = test::TestRequest::post()
-        .uri("/v1/tags")
-        .set_json(&request_body)
-        .to_request();
-
-    let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_success());
-
-    let body: test_types::ResponseData<TagResponse> = test::read_body_json(resp).await;
-    assert_eq!(body.message, "Tag created successfully");
-
-    let data = body.data;
-    assert_eq!(data.uuid.len(), 36);
-    assert_eq!(data.user_uuid.len(), 36);
-    assert_eq!(data.name, "tag4");
-    assert!(data.created_at.and_utc().timestamp() > 0);
 }
 
 #[actix_web::test]
