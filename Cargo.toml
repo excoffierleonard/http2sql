@@ -4,27 +4,21 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-actix-web = "4"
-sqlx = { version = "0.7", features = [
-    "runtime-tokio",
-    "mysql",
-    "chrono",
-    "macros",
-    "json",
-] }
-tokio = { version = "1", features = ["full"] }
-chrono = { version = "0.4", features = ["serde"] }
-dotenv = "0.15"
-num_cpus = "1"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-log = "0.4"
-env_logger = "0.10"
-base64 = "0.13"
 argon2 = "0.5.3"
 uuid = { version = "1.12.0", features = ["v4"] }
 rand = "0.8.5"
 sha2 = "0.10.8"
+base64 = "0.22.1"
+env_logger = "0.11.6"
+log = "0.4.25"
+serde_json = "1.0.137"
+num_cpus = "1.16.0"
+dotenv = "0.15.0"
+chrono = { version = "0.4.39", features = ["serde"] }
+serde = { version = "1.0.217", features = ["derive"] }
+tokio = { version = "1.43.0", features = ["full"] }
+actix-web = "4.9.0"
+sqlx = { version = "0.8.3", features = ["runtime-tokio", "mysql", "chrono", "macros", "json"] }
 
 [dev-dependencies]
 actix-http = "3.9.0"
