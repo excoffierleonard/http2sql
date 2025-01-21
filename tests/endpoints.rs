@@ -179,7 +179,7 @@ async fn read_users() {
 async fn create_tags() {
     #[derive(Serialize, Debug)]
     struct RequestBody {
-        user_uuid: String,
+        api_key: String,
         name: String,
     }
 
@@ -195,7 +195,7 @@ async fn create_tags() {
     let app = test_utils::setup_test_app(database_url).await;
 
     let request_body = RequestBody {
-        user_uuid: "b6cea585-0dc0-4887-8247-201f164a6d6a".to_string(),
+        api_key: "ak_prod_kOYoM5SeT+M3LqWdClwWZO0/E9Fogg63wGUxTuolMNQ=".to_string(),
         name: "tag4".to_string(),
     };
     let req = test::TestRequest::post()

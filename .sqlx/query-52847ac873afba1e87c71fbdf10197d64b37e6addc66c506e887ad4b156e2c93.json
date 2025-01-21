@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO tags (uuid, user_uuid, name) VALUES (?, (SELECT user_uuid FROM api_keys WHERE api_key_hash = ?), ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "52847ac873afba1e87c71fbdf10197d64b37e6addc66c506e887ad4b156e2c93"
+}

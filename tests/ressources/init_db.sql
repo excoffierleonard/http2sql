@@ -30,7 +30,7 @@ CREATE TABLE tags (
     PRIMARY KEY (uuid),
     FOREIGN KEY (user_uuid) REFERENCES users(uuid)
 );
--- Insert some mock data
+-- Insert some mock users
 INSERT INTO users (uuid, email, password_hash)
 VALUES (
         'b6cea585-0dc0-4887-8247-201f164a6d6a',
@@ -47,6 +47,7 @@ VALUES (
         'alice.smith@gmail.com',
         '$argon2id$v=19$m=19456,t=2,p=1$byHK//s8iG2imuuhqeuGbA$+oMywATyIdqejvsojcUR0m5ZV3izsy1KRFthYvFJDwU'
     );
+-- Insert some mock tags
 INSERT INTO tags (uuid, user_uuid, name)
 VALUES (
         "3fd8b2aa-2665-4154-937b-a412e52d9070",
@@ -62,4 +63,11 @@ VALUES (
         "88e4a42e-559b-431e-b31b-8b41bf6ea70f",
         'c8fdc92e-f72b-4fc6-b15d-ad006e063d83',
         'tag3'
+    );
+-- Insert mock api keys
+INSERT INTO api_keys (uuid, user_uuid, api_key_hash)
+VALUES (
+        'f1b3b3b3-1b3b-4b3b-8b3b-1b3b3b3b3b3b',
+        'b6cea585-0dc0-4887-8247-201f164a6d6a',
+        '6371a4a2bfe90c3209f3ab1d8665c17fdce7f5314411e7676716f3a30f4e426f'
     );

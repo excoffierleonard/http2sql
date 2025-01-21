@@ -114,7 +114,7 @@ POST /v1/tags
 
 ```json
 {
-    "user_uuid": "3ef041b2-0c27-477c-88f4-b68ba5e8de45",
+    "api_key": "ak_prod_kOYoM5SeT+M3LqWdClwWZO0/E9Fogg63wGUxTuolMNQ=",
     "name": "tag3"
 }
 ```
@@ -125,7 +125,7 @@ POST /v1/tags
 {
     "data": {
         "uuid": "f127e4fc-db67-483f-bf9d-e0c77c1f8d9d",
-        "user_uuid": "3ef041b2-0c27-477c-88f4-b68ba5e8de45",
+        "user_uuid": "b6cea585-0dc0-4887-8247-201f164a6d6a",
         "name": "tag3",
         "created_at": "2025-01-15T04:59:24"
     },

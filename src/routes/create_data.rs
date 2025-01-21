@@ -1,4 +1,4 @@
-use crate::{db::DbPool, errors::ApiError, responses::ApiResponse};
+use crate::{db::DbPool, errors::ApiError, responses::ApiResponse, utils::auth::ApiKey};
 use actix_web::{
     post,
     web::{Data, Json},
@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 #[derive(Deserialize, Debug)]
 struct RequestBody {
-    user_uuid: String,
+    api_key: String,
     name: String,
 }
 
@@ -29,11 +29,13 @@ async fn create_tags(
 ) -> Result<ApiResponse<ResponseData>, ApiError> {
     let uuid = Uuid::new_v4().to_string();
 
+    let api_key_hash = ApiKey::new(&request_body.api_key)?.hash();
+
     // First do the insert
     query!(
-        "INSERT INTO tags (uuid, user_uuid, name) VALUES (?, ?, ?)",
+        "INSERT INTO tags (uuid, user_uuid, name) VALUES (?, (SELECT user_uuid FROM api_keys WHERE api_key_hash = ?), ?)",
         uuid,
-        &request_body.user_uuid,
+        &api_key_hash,
         &request_body.name
     )
     .execute(pool.get_pool())

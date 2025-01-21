@@ -29,6 +29,6 @@ curl --request POST \
      --url 'http://localhost:8080/v1/tags' \
      --header 'Content-Type: application/json' \
      --data '{
-           "user_uuid": "68a373e4-c8d7-4449-8e63-0f216a59fd0e",
+           "api_key": "ak_prod_kOYoM5SeT+M3LqWdClwWZO0/E9Fogg63wGUxTuolMNQ=",
            "name": "tag3"
       }'
