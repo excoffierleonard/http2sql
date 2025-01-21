@@ -12,33 +12,33 @@ impl ApiKey {
 
     // Create a new API key, with a custom input
     pub fn new(api_key: impl Into<String>) -> Result<Self, ApiError> {
-        let api_key = api_key.into();
-
-        // Validate the incoming key before creating the struct
-        if Self::is_valid_format(&api_key) {
-            Ok(Self(api_key))
-        } else {
-            Err(ApiError::InvalidFormat(
-                "Invalid API key format".to_string(),
-            ))
-        }
+        let api_key = ApiKey(api_key.into());
+        api_key.validate()?;
+        Ok(api_key)
     }
 
     // Helper method to check if a string matches our API key format
-    fn is_valid_format(key: &str) -> bool {
-        // First, check if it starts with our prefix
-        if !key.starts_with(Self::PREFIX) {
-            return false;
+    fn validate(&self) -> Result<&Self, ApiError> {
+        let validations = [
+            // The API key must start with the correct prefix
+            (
+                !self.0.starts_with(Self::PREFIX),
+                "API key must start with the correct prefix",
+            ),
+            // The base64 encoded data must be 32 bytes long
+            (
+                decode(&self.0[Self::PREFIX.len()..]).map_or(true, |decoded| decoded.len() != 32),
+                "API key must contain valid base64 encoded data of correct length",
+            ),
+        ];
+
+        for (condition, message) in validations {
+            if condition {
+                return Err(ApiError::InvalidInput(message.to_string()));
+            }
         }
 
-        // Get the part after the prefix
-        let secret_part = &key[Self::PREFIX.len()..];
-
-        // Try to decode it as base64. If this fails, it's not a valid key
-        match decode(secret_part) {
-            Ok(decoded) => decoded.len() == 32, // Must be exactly 32 bytes when decoded
-            Err(_) => false,
-        }
+        Ok(self)
     }
 
     // Generate a new API key
@@ -130,6 +130,6 @@ mod tests {
     #[test]
     fn validate_works_with_generated_keys() {
         let api_key = ApiKey::generate();
-        assert!(ApiKey::is_valid_format(api_key.as_str()));
+        assert!(api_key.validate().is_ok());
     }
 }

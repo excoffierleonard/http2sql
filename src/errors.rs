@@ -15,7 +15,6 @@ pub enum ApiError {
     ConfigError(String),
     HashError(argon2::password_hash::Error),
     Unauthorized(String),
-    InvalidFormat(String),
 }
 
 impl std::fmt::Display for ApiError {
@@ -26,7 +25,6 @@ impl std::fmt::Display for ApiError {
             Self::ConfigError(e) => write!(f, "Config error: {}", e),
             Self::HashError(e) => write!(f, "Hash error: {}", e),
             Self::Unauthorized(e) => write!(f, "Unauthorized: {}", e),
-            Self::InvalidFormat(e) => write!(f, "Invalid format: {}", e),
         }
     }
 }
@@ -41,7 +39,6 @@ impl ResponseError for ApiError {
             Self::ConfigError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::HashError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::Unauthorized(_) => StatusCode::UNAUTHORIZED,
-            Self::InvalidFormat(_) => StatusCode::BAD_REQUEST,
         }
     }
 
@@ -72,6 +69,12 @@ impl From<argon2::password_hash::Error> for ApiError {
     }
 }
 
+impl From<base64::DecodeError> for ApiError {
+    fn from(_: base64::DecodeError) -> Self {
+        ApiError::InvalidInput("Invalid base64 format".to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -84,7 +87,6 @@ mod tests {
         let config_error = ApiError::ConfigError("Missing environment variable".to_string());
         let hash_error = ApiError::HashError(argon2::password_hash::Error::Algorithm);
         let unauthorized = ApiError::Unauthorized("Unauthorized".to_string());
-        let invalid_format = ApiError::InvalidFormat("Invalid format".to_string());
 
         assert_eq!(
             bad_request.to_string(),
@@ -97,7 +99,6 @@ mod tests {
         );
         assert_eq!(hash_error.to_string(), "Hash error: unsupported algorithm");
         assert_eq!(unauthorized.to_string(), "Unauthorized: Unauthorized");
-        assert_eq!(invalid_format.to_string(), "Invalid format: Invalid format");
     }
 
     #[test]
@@ -122,10 +123,6 @@ mod tests {
         assert_eq!(
             ApiError::Unauthorized("Unauthorized".to_string()).status_code(),
             StatusCode::UNAUTHORIZED
-        );
-        assert_eq!(
-            ApiError::InvalidFormat("Invalid format".to_string()).status_code(),
-            StatusCode::BAD_REQUEST
         );
     }
 }
