@@ -6,6 +6,7 @@
   - [Register a new user](#register-a-new-user)
   - [Authenticate a user](#authenticate-a-user)
   - [Read all users](#read-all-users)
+  - [Create a tag](#create-a-tag)
 
 ## Endpoints
 
@@ -60,8 +61,10 @@ POST /v1/auth/sign-in
 
 ```json
 {
-    "data": null,
-    "message": "Correct password"
+    "data": {
+        "api_key": "ak_prod_IoJY0DGzXoiEqRmxr6FH/vXvHL5H26uiuGst9+3nHl0="
+    },
+    "message": "Password is correct, API key generated successfully"
 }
 ```
 
