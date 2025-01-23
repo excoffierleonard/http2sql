@@ -3,8 +3,9 @@
 ## Table of Contents
 
 - [Endpoints](#endpoints)
-  - [Register a new user](#register-a-new-user)
-  - [Authenticate a user](#authenticate-a-user)
+    - [Register a new user](#register-a-new-user)
+    - [Authenticate a user](#authenticate-a-user)
+    - [Fetch User Metadata](#fetch-user-metadata)
 
 ## Endpoints
 
@@ -70,7 +71,7 @@ POST /v1/auth/sign-in
 ### Fetch User Metadata
 
 ```http
-GET /v1/user/{uuid}
+GET /v1/user/metadata
 ```
 
 #### Request Header
