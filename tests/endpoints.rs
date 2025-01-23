@@ -54,19 +54,6 @@ mod test_types {
     use super::*;
 
     #[derive(Deserialize, Debug)]
-    pub struct Tag {
-        pub name: String,
-        pub created_at: NaiveDateTime,
-    }
-
-    #[derive(Deserialize, Debug)]
-    pub struct User {
-        pub email: String,
-        pub created_at: NaiveDateTime,
-        pub tags: Vec<Tag>,
-    }
-
-    #[derive(Deserialize, Debug)]
     pub struct ResponseData<T> {
         pub data: T,
         pub message: String,
@@ -123,6 +110,8 @@ async fn login_user_success() {
     #[derive(Deserialize, Debug)]
     struct LoginResponse {
         api_key: String,
+        created_at: NaiveDateTime,
+        expires_at: NaiveDateTime,
     }
 
     let (database_url, _container) = test_utils::setup_container().await;
@@ -142,6 +131,8 @@ async fn login_user_success() {
 
     let response_body: test_types::ResponseData<LoginResponse> = test::read_body_json(resp).await;
     assert_eq!(response_body.data.api_key.len(), 52);
+    assert!(response_body.data.created_at.and_utc().timestamp() > 0);
+    assert!(response_body.data.expires_at.and_utc().timestamp() > 0);
     assert_eq!(
         response_body.message,
         "Password is correct, API key generated successfully"
@@ -149,65 +140,31 @@ async fn login_user_success() {
 }
 
 #[actix_web::test]
-async fn read_users() {
-    let (database_url, _container) = test_utils::setup_container().await;
-    let app = test_utils::setup_test_app(database_url).await;
-
-    let req = test::TestRequest::get().uri("/v1/users").to_request();
-    let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_success());
-
-    let body: test_types::ResponseData<Vec<test_types::User>> = test::read_body_json(resp).await;
-    assert_eq!(body.message, "User metadata retrieved successfully");
-
-    let users = body.data;
-    assert_eq!(users.len(), 3);
-    assert_eq!(users[0].email, "alice.smith@gmail.com");
-    assert!(users[0].created_at.and_utc().timestamp() > 0);
-    assert_eq!(users[0].tags.len(), 2);
-    assert_eq!(users[0].tags[0].name, "tag1");
-    assert!(users[0].tags[0].created_at.and_utc().timestamp() > 0);
-    assert_eq!(users[0].tags[1].name, "tag2");
-    assert!(users[0].tags[1].created_at.and_utc().timestamp() > 0);
-}
-
-#[actix_web::test]
-async fn create_tags() {
-    #[derive(Serialize, Debug)]
-    struct RequestBody {
-        user_uuid: String,
-        name: String,
-    }
-
+async fn fetch_user_metadata() {
     #[derive(Deserialize, Debug)]
-    struct TagResponse {
+    struct UserMetadata {
         uuid: String,
-        user_uuid: String,
-        name: String,
+        email: String,
         created_at: NaiveDateTime,
     }
 
     let (database_url, _container) = test_utils::setup_container().await;
     let app = test_utils::setup_test_app(database_url).await;
 
-    let request_body = RequestBody {
-        user_uuid: "b6cea585-0dc0-4887-8247-201f164a6d6a".to_string(),
-        name: "tag4".to_string(),
-    };
-    let req = test::TestRequest::post()
-        .uri("/v1/tags")
-        .set_json(&request_body)
+    let api_key = "ak_prod_kOYoM5SeT+M3LqWdClwWZO0/E9Fogg63wGUxTuolMNQ=";
+    let req = test::TestRequest::get()
+        .uri("/v1/user/metadata")
+        .insert_header(("Authorization", format!("Bearer {}", api_key)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
 
-    let body: test_types::ResponseData<TagResponse> = test::read_body_json(resp).await;
-    assert_eq!(body.message, "Tag created successfully");
+    let body: test_types::ResponseData<UserMetadata> = test::read_body_json(resp).await;
+    assert_eq!(body.message, "User metadata retrieved successfully");
 
     let data = body.data;
-    assert_eq!(data.uuid.len(), 36);
-    assert_eq!(data.user_uuid.len(), 36);
-    assert_eq!(data.name, "tag4");
+    assert_eq!(data.uuid, "b6cea585-0dc0-4887-8247-201f164a6d6a");
+    assert_eq!(data.email, "john.doe@gmail.com");
     assert!(data.created_at.and_utc().timestamp() > 0);
 }

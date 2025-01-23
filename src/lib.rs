@@ -1,4 +1,5 @@
 mod errors;
+mod middleware;
 mod responses;
 mod utils;
 
