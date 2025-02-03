@@ -135,7 +135,10 @@ async fn verify_user_credentials(
     .await?;
 
     // Verify the password - if verification fails, this will return early with an error
-    password.verify(&db_sign_in_response.password_hash)?;
+    match password.verify(&db_sign_in_response.password_hash)? {
+        true => (),
+        false => return Err(ApiError::Unauthorized("Invalid credentials".to_string())),
+    }
 
     // If we get here, password verification succeeded
     Ok(VerifiedUser {
